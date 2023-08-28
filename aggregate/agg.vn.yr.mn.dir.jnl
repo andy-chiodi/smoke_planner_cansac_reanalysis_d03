@@ -1,0 +1,25 @@
+ ! NOAA/PMEL TMAP
+ ! PyFerret v7.42 (optimized)
+ ! Linux 4.4.0-116-generic - 08/10/18
+ ! 10-Dec-18 09:24     
+
+! this script aggregates hourly netcdf files to monthly
+!set mem/size=4000
+define sym mv "($1)"
+define sym yr "($2)"
+define sym m "($3)"  ! input double character, e.g. 08, 12, etc
+define sym so_dir  "($4)"  ! where source files reside
+define sym sa_dir "($5)"   ! where aggregate will be saved
+
+! aggregation in ferret
+! 1st input var name, 2nd year, 3rd month (mm), e.g.>> go agg.jnl  vi 2017 01
+
+let file_list = SPAWN("ls -1 ($so_dir)/($mv).($yr)-($m)-*_*.nc")
+TSERIES ($1) = file_list
+ 
+! save hourly netcdf files into month-long aggregations
+save/file="($sa_dir)/($mv).($yr).($m).nc"/clobber ($mv)  
+
+! remove files that were just aggregated to save storage space
+sp rm ($so_dir)/($mv).($yr)-($m)-*_*.nc
+
