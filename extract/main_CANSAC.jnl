@@ -1,0 +1,36 @@
+!cancel mode verify
+!cancel mode journal
+can da/all
+can va/all
+
+!define sym ddir "/storage/chiodi/CANSAC_reanalysis/d03/data"  ! dir where the data will be saved
+!define sym ddir "/home/chiodi/FW/test"
+define sym ddir "($3)"
+define sym ymdh "($2)"
+define sym wrffile "($1)" 
+
+!set mem/size=1000
+use ($wrffile)        ! ($1) referes to the first argument given after the name of the script, when the script is executed, e.g. 'myfile' in '>> go main.jnl myfile'
+go recipe_CANSAC    ! defines core atmos. variables for mixing height and trans. wind calc. from saved WRF data
+go vi_CANSAC        !_checkNL           ! calculates mixing height, trans. wind and ventiliation index (needs tc.jnl for time conversion)
+                    ! also defines 10m wind direction
+                    ! vi_2.0 differs from original (vi.jnl) in that v2.0 includes transport wind components TWU and TWV
+                    ! vi_CANSAC has some changes from vi_2.0, which was built for UW WRF, to main it compatable with the CANSAC reanalysis
+
+save/file="($ddir)/mh.($ymdh).nc"/clobber mh
+save/file="($ddir)/mh2.($ymdh).nc"/clobber mh2
+save/file="($ddir)/tw.($ymdh).nc"/clobber tw
+save/file="($ddir)/vi.($ymdh).nc"/clobber vi
+save/file="($ddir)/w10.($ymdh).nc"/clobber w10
+!save/file="($ddir)/wdir10.($ymdh).nc"/clobber wdir10
+save/file="($ddir)/rh2.($ymdh).nc"/clobber rh2
+save/file="($ddir)/z500.($ymdh).nc"/clobber z500
+save/file="($ddir)/temp2.($ymdh).nc"/clobber temp2
+save/file="($ddir)/pbl.($ymdh).nc"/clobber pbl
+save/file="($ddir)/u10e.($ymdh).nc"/clobber u10e
+save/file="($ddir)/v10e.($ymdh).nc"/clobber v10e
+save/file="($ddir)/utwe.($ymdh).nc"/clobber utwe
+save/file="($ddir)/vtwe.($ymdh).nc"/clobber vtwe
+save/file="($ddir)/emc.($ymdh).nc"/clobber emc
+
+!sp rm ferret.jnl

@@ -1,0 +1,218 @@
+! calculate mixing height from WRF data
+! needs        virtual potential temperature profile          (VPT)
+!              surface virt. pot. temp.                      (SVPT)
+!              geopotential height of sigma levels           (height)
+!              surface geopotential height                    (HGT)
+!
+! vars above calculated in recipe_CANSAC.jnl
+!
+! also uses tc.jnl to create time axis
+!
+! vertical grid notes: U,V on 31
+! PH and PHB (geopotential) on 32
+! P and PB on 31
+
+let ht = height_rg
+let profile =  VPT  
+let nonlocal_lowest = if (profile[k=1] gt svpt)  and (profile[k=@min] lt svpt) then 1 else 0 
+let nonlocal_second = if (profile[k=2] gt svpt)  and    (profile[k=1] gt svpt) and (profile[k=@min] lt svpt) then 1 else 0
+let nonlocal = if (profile[k=1] gt svpt) and (profile[k=@min] lt profile[k=1]) then 1 else 0
+let mask1 = if profile lt svpt then 1 else 0 
+let mask1nan =  if profile lt svpt then 1 
+let mask2 = if profile gt svpt then 1 
+let masked1 = profile*mask1 
+let masked2 = profile*mask2 
+let layers = mask1[k=@sum] 
+let l1 = masked1[k=@max]    
+let l2 = masked2[k=@min] 
+let w2 = (svpt - l1)/(l2-l1) 
+let w1 = 1-w2 
+let h1m = ht*mask1 
+let h2m = ht*mask2 
+let h1 = h1m[k=@max] 
+let h2 = h2m[k=@min] 
+let mh1 = h1*w1 + h2*w2 - hgt  !  subtract hgt for  height agl
+! let mh = if layers gt 0.5 then mh1
+let mh_0 = if layers gt 0.5 then mh1 else 0
+
+list/format=(2f10.5)/file="nl.($ymdh).dat"/clobber 100*nonlocal_lowest[x=@sum,y=@sum]/nonlocal_lowest[x=@ngd,y=@ngd], 100*nonlocal[x=@sum,y=@sum]/nonlocal[x=@ngd,y=@ngd]
+
+! evaluate using virt. pot. temp. calc'd w/ 2m air temp
+let nonlocal_lowest2m = if (profile[k=1] gt h2m_vpt)  and (profile[k=@min] lt h2m_vpt) then 1 else 0
+let nonlocal_second2m = if (profile[k=2] gt h2m_vpt)  and    (profile[k=1] gt h2m_vpt) and (profile[k=@min] lt h2m_vpt) then 1 else 0
+let nonlocal2m = if (profile[k=1] gt h2m_vpt) and (profile[k=@min] lt profile[k=1]) then 1 else 0
+let mask12m = if profile lt h2m_vpt then 1 else 0
+let mask1nan2m =  if profile lt h2m_vpt then 1
+let mask22m = if profile gt h2m_vpt then 1
+let masked12m = profile*mask12m
+let masked22m = profile*mask22m
+let layers2m = mask12m[k=@sum]
+let l12m = masked12m[k=@max]
+let l22m = masked22m[k=@min]
+let w22m = (h2m_vpt - l12m)/(l22m-l12m)
+let w12m = 1-w22m
+let h1m2m = ht*mask12m
+let h2m2m = ht*mask22m
+let h12m = h1m2m[k=@max]
+let h22m = h2m2m[k=@min]
+let mh1_2m = h12m*w12m + h22m*w22m - hgt  !  subtract hgt for  height agl
+
+list/format=(2f10.5)/file="nl.($ymdh).dat"/append 100*nonlocal_lowest2m[x=@sum,y=@sum]/nonlocal_lowest2m[x=@ngd,y=@ngd], 100*nonlocal2m[x=@sum,y=@sum]/nonlocal2m[x=@ngd,y=@ngd]
+
+! let mh = if layers gt 0.5 then mh1
+let mh_0_2m = if layers2m gt 0.5 then mh1_2m else 0
+let hagl_0 = ht - hgt
+
+! now transport winds.  U staggared in X, V staggared in Y-axis direction, so need to unstaggar
+
+! un-staggar : Note: unstaggaring reduces max wind speed since averaging smooths
+
+let v_un0 = 0.5*(v + v[j=@shf:1])  
+let v_un = v_un0[j=1:534]
+
+let u_un0 = 0.5*(u + u[i=@shf:1])
+let u_un = u_un0[i=1:486]
+
+let wspd = (u_un^2 + v_un^2)^0.5
+let sprof = wspd*mask1nan
+let uprof = u_un*mask1nan
+let vprof = v_un*mask1nan
+
+let transport_wind  = sprof[k=@ave]
+let/ti="for extracting point" windspeed0 =  (u_un0^2 + v_un0^2)^0.5
+
+! vertical average weighted by layer geopotential thicknes
+let weights0 = 0.5*(ht[k=@shf:1] - ht[k=@shf:-1])
+let weights = weights0[k=@fnr]
+let thickness = weights*mask1
+let spdth = thickness*sprof
+let uth   = thickness*uprof
+let vth   = thickness*vprof
+let transport_wind_hgtweighted = spdth[k=@sum] / thickness[k=@sum]
+let u_tw_hgtweighted = uth[k=@sum] / thickness[k=@sum]
+let v_tw_hgtweighted = vth[k=@sum] / thickness[k=@sum]
+
+let transport_wind2 = if abs(transport_wind_hgtweighted) lt 99999999.9 then transport_wind_hgtweighted else 0
+let u_transport_wind2 = if abs(u_tw_hgtweighted) lt 99999999.9 then u_tw_hgtweighted else 0
+let v_transport_wind2 = if abs(v_tw_hgtweighted) lt 99999999.9 then v_tw_hgtweighted else 0
+
+
+let lm = if landmask gt 0.5 then 1 
+let transport_wind_lm = transport_wind2 * lm
+let u_transport_wind_lm = u_transport_wind2 * lm
+let v_transport_wind_lm = v_transport_wind2 * lm
+
+! use 10m winds for wind speed
+
+let wspd10_0 = (u10*u10+v10*v10)^0.5
+
+! calc 10m wind direction
+
+let wdir10_0  = mod(360.+180./3.141592653589 * atan2 (u10,v10),360)  ! in nautical/wind vector azimuth, e.g. eastward flow is 90 deg
+	
+! create ferret friendly time axis
+
+! next few lines used to be "go tc.jnl"
+! convert wrf "times" to netcdf time axis
+! grab year, month, day, hour info, from WRF var "times"
+let     HR = SUBSTRING(TIMES,12,2)
+let     DD = SUBSTRING(TIMES,9,2)
+let     MN = SUBSTRING(TIMES,6,2)
+let     YR = SUBSTRING(TIMES,1,4)
+! use days 1900 to create year day (since 1-1-1900)
+let     TSTEP = DAYS1900(STRFLOAT(YR),STRFLOAT(MN),STRFLOAT(DD)) + DFRAC
+let     DFRAC = STRFLOAT(HR)/24
+define axis/T/T0=1-jan-1900/unit=days tax = tstep
+
+! prep for saving: mh, tw, wspd10m, vi, wdir10_0
+
+! Ventilation index
+
+let/ti="Ventilation Index"/units="m^2 s-1" vi0 = transport_wind2 * mh_0
+let/ti="Ventilation Index (WA State - based on 10m wind speed)"/units="m^2 s-1" vi_wa0 = wspd10 * mh_0
+
+
+let/ti="Ventilation Index"/units="m^2 s-1" vi = vi0[gt=tax@asn]
+let/ti="Ventilation Index (WA State - based on 10m wind speed)"/units="m^2 s-1" vi_wa = vi_wa0[gt=tax@asn]
+
+
+! Mixing Height
+
+let/ti="Mixing Height"/units="m" mh = mh_0[gt=tax@asn]
+
+! Mixing Height calculated with 2m air temperature, rather than skin temperature
+
+let/ti="Mixing Height"/units="m" mh2 = mh_0_2m[gt=tax@asn]
+
+! layer height above ground level
+
+let/ti="Layer Height agl"/units="m" hagl = hagl_0[gt=tax@asn]
+
+! Transport winds
+
+let/ti="Transport Wind"/units="m^2/s" tw = transport_wind2[gt=tax@asn]
+
+! wind speed profile
+
+let/ti="Wind speed"/units="m/s" windspeed = windspeed0[gt=tax@asn,gxyz=hagl@asn]
+
+! 10 m wind speed
+
+let/ti="Wind Speed at 10m agl"/units="m/s" w10 = wspd10_0[gt=tax@asn]
+
+! 10 m wind direction
+
+let/ti="Wind direction at 10m agl (vector azimuth direction/nautical)"/units="degrees" wdir10  = wdir10_0[gt=tax@asn]
+
+! 2m relative humidity - calculated in recipe.jnl
+
+let/ti="relative humidity at 2m height agl" rh2 = rh2_1[gt=tax@asn] ! rh2_0 is tetens/stull approach, rh2_1 follows HDW code - changed to rh2_1 1Aug2019
+
+! z500
+let/ti="500 hPa geopotential height"/units="m" z500 = z500_ln[gt=tax@asn]
+
+
+! 2m air temperature
+let/ti="Temperature 2m agl"/units="K" temp2 = t2[gt=tax@asn]
+
+! Planetary boundary layer height
+
+let/ti="Planetary Boundary Layer Height"/units="m" pbl = pblh[gt=tax@asn]
+
+
+! add EMC
+! EMC from Fosberg (1978) equations. See also Simard '68/
+! RH (rh2m) in percent
+! T (tf) in F :  tf =  (K − 273.15) × 9/5 + 32
+! checked against http://www.csgnetwork.com/emctablecalc.html - found to be within a few percent (non-exhaustive)
+
+let/ti="2m air temp"/units="F" tf = (t2[d=1] - 273.15)  * 9 / 5 + 32.0
+let rh2m = if rh2_1[d=1] le 100.0 then rh2_1[d=1] else 100.0
+let emc1 = if (rh2m lt 10.0) then 0.03229 + 0.281073 * rh2m - 0.000578 * rh2m * tf else 0.0
+let emc2 = if ((rh2m ge 10.0) and (rh2m le 50.0)) then 2.22749 + 0.160107 * rh2m - 0.014784 * tf else 0.0
+let emc3 = if (rh2m gt 50.0) then 21.0606 + 0.005565 * rh2m * rh2m - 0.00035 * rh2m * tf - 0.483199 * rh2m else 0.0
+let emc0 = emc1+emc2+emc3
+let/ti="Equilibrium Moisture Content (from Fosberg 1978 equations and WRF T_2m & RH_2m)"/units="%" emc = emc0[gt=tax@asn]
+
+! rotate 10 m winds
+use alpha
+set da 1
+
+! from https://www-k12.atmos.washington.edu/~ovens/wrfwinds.html  (Dave Ovens)
+!  Uearth = U*cosalpha - V*sinalpha
+!  Vearth = V*cosalpha + U*sinalpha
+! 10m wind vectors in model domain space are named u10,v10
+
+let/ti="Zonal 10m wind (Rotated to Earth Coordinates)"  u10r = u10*cosalpha[d=2] - v10*sinalpha[d=2]
+let/ti="Meridional 10m wind (Rotated to Earth Coordinates)"  v10r = v10*cosalpha[d=2] + u10*sinalpha[d=2]
+
+let/ti="Zonal 10m wind (Rotated to Earth Coordinates)"/units="m/s"  u10e = u10r[gt=tax@asn]
+let/ti="Meridional 10m wind (Rotated to Earth Coordinates)"/units="m/s"  v10e = v10r[gt=tax@asn]
+
+! rotate u_tw, v_tw
+let/ti="Zonal transport wind (Rotated to Earth Coordinates)"  utwr = u_transport_wind2*cosalpha[d=2] - v_transport_wind2*sinalpha[d=2]
+let/ti="Meridional transport wind (Rotated to Earth Coordinates)"  vtwr = v_transport_wind2*cosalpha[d=2] + u_transport_wind2*sinalpha[d=2]
+
+let/ti="Zonal transport wind wind (Rotated to Earth Coordinates)"/units="m/s"  utwe = utwr[gt=tax@asn]
+let/ti="Meridional transport wind (Rotated to Earth Coordinates)"/units="m/s"  vtwe = vtwr[gt=tax@asn]
+

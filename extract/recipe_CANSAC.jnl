@@ -1,0 +1,79 @@
+! this converts WRF-saved variables to form for mixing height and transport wind calc. 
+
+let     pot_temp_pert = 'T'
+!let/ti="Potential Temperature (T+T00)"/units="K"     theta = pot_temp_pert + T00
+let/ti="Potential Temperature (T+300)"/units="K"     theta = pot_temp_pert + 300.0  ! changed on 30 July 2019, AMC
+let/ti="Pressure"/units="Pa"    PRESSURE = P+PB
+
+! may not be needed with ncks trick
+!let     ZF = Z[G=W]
+!let     ZH = Z[G=U]
+!let znh = reshape(znu,zh) ! ZNU is on x rather than z axis. this converts to z without changing eta (a.k.a. sigma) values
+!let znf = reshape(znw,zf) ! ZNW is on x rather than z axis. this converts to z without changing eta (a.k.a. sigma) values
+!let/ti="pressure of vertical coordinate - full eta (H)"/units="Pa" PVC_F = ZNF*(PSFC - P_TOP) + P_TOP
+!let/ti="pressure of vertical coordinate - half eta (T,U and V)"/units="Pa" PVC_H = ZNH*(PSFC - P_TOP) + P_TOP
+
+let/ti="pressure of vertical coordinate - full eta (H)"/units="Pa" PVC_F = ZNW*(PSFC - P_TOP) + P_TOP
+let/ti="pressure of vertical coordinate - half eta (T,U and V)"/units="Pa" PVC_H = ZNU*(PSFC - P_TOP) + P_TOP
+
+let/ti="geopotential"/units="m^2 / s^2"  geopotential  = PH+PHB
+let/ti="geopotenital height"/units="m" gh = geopotential/9.81
+
+! added 13 Dec 2018: interpolate to find z500
+! 1st way: linear in pressure of vertical coordinate
+let/ti="vertical grid interpolation points for pressure=500hPa"  vc500=pvc_f[z=@weq:50000]
+! 2nd way: linear in ln(p)  this way is less than 1% different based on 9/13/2016 example
+let/ti="ln of pressure of vertical coordinate" lp = ln(pvc_f)
+let/ti="vertical grid ln interpolation points for pressure=500hPa"  vc500ln= lp[z=@weq:`ln(50000)`]
+let/ti="weighted geopotential height" wgh =  vc500*gh
+let/ti="weighted geopotential height (ln-linear)" wgh_ln = vc500ln*gh
+let/ti="500 hPa geopotential height"/units="m" z500_0 = wgh[z=@sum]
+let/ti="500 hPa geopotential height (ln-linear)"/units="m" z500_ln = wgh_ln[z=@sum]
+! notes: unclear if vc500 works, but z500_ln is used in UW version
+
+! need vitual potential temperature, have mixing ratios
+
+define axis/Z=1.5:31.5:1 zhalf
+let ghh = gh[gz=zhalf]
+let height = ghh[gz=ZNU@asn]
+let height_rg = height[gz=vpt@asn]
+
+let/ti="gas constant in SI"/units="J kg-1 K-1" Rd  = 287.04
+let gravity = 9.81
+let ig      = 0.1019368 ! reciprocal of gravity 
+let/units="Pa"/ti="Reference pressure" P0 = 100000.0   ! reference pressure in Pa
+
+let/units="degC"/ti="Temperature in K, calc. from theta and pressure"  temp_k = theta * (  (pressure / P0)^(2/7)  )  
+let/ti="saturation vapor pressure"/units="Pa" es = 1000.0 * 0.61078 * exp (17.2694 * (temp_k -273.16) / (temp_k - 35.86) )  ! empirical Tetens 1930.  *1000 for kPa to Pa, Stull 551
+let/ti="saturation mixing ratio"/units="kg/kg" rs = 0.622 * es / (pressure - es)      ! stull 551
+let/ti="solid and liquid water mixing ratio (Cloud, Rain, Snow, Ice, Graupel)"/units="kg/kg" rl = QCLOUD+QRAIN+QSNOW+QICE+QGRAUP
+! vpt - standard, vptl - subtracts liquid and solid water mixing ratio, vpts - Stull method, assuming saturation if cloud, then subtracting (model supersat. over water)
+let/ti="Virtual Potential Temperature, acounting for liquid and solid water"/units="Pa" vptl = theta * (1 + 0.61*QVAPOR - rl)
+let/ti="Virtual Potential Temperature"/units="Pa" vpt = theta * (1 + 0.61*QVAPOR - 0.0*rl)
+let/ti="Virtual Potential Temperature - Stull sat"/units="Pa" vpts = if QCLOUD lt 0.0001 then vpt else theta * (1+0.61*rs - rl)  ! Stull  textbook recommended
+let/ti="Virtual Temperature"/units="K" tv = temp_k * (1 + 0.61*QVAPOR)
+let/ti="Virtual Temperature, including density from liquid and solid water"/units="K" tv_l = temp_k * (1 + 0.61*QVAPOR -rl)
+let/ti="Mean virtual temperature @ k=i from k=1 to k=i"/units="K" tvmean =  tv[k=@rsum] / zh
+let/ti="height of levels from hypsometric equation"/units="m" z_hyp = ig * Rd * tvmean * ln ( psfc / pressure)   ! need Rd in J kg-1 K-1
+
+! relative humidity from wrf-saved mixing ratio (Q2) and calculated saturation mixing ratio @ 2m height agl
+! ***** Two approaches up to ~10% difference in low rh regions for CANSAC  ****************
+let/ti="2m saturation vapor pressure"/units="Pa" es2 = 1000.0 * 0.61078 * exp (17.2694 * (t2 -273.16) / (t2 - 35.86) )  ! empirical Tetens 1930.  *1000 for kPa to Pa, Stull 551
+let/ti="2m saturation mixing ratio"/units="kg/kg" rs2 = 0.622 * es2 / (psfc - es2)      ! stull 551
+let/ti="2m air temp (absolute)"/units="degC" t2c = t2 - 273.15
+let/ti="2m saturation mixing ratio"/units="kg/kg" qvs = 100.0 * 3.8 / psfc * exp (17.27*t2c/(t2c+237.15)) 
+
+let/ti="Relative humidity" rh2_0 = 100.0 * Q2 / rs2
+let/ti="Relative humidity" rh2_1 = 100.0 * Q2 / qvs
+
+! have height, theta_v (vpt), u,v
+! still need surface virtual potential temperature from "TSK" the skin temperature used in the PBL and radiation codes
+! Q2 is 2m mixing ratio, 
+let/ti="2m specific humidity"/units="kg/kg" shum_2m = Q2 / (1+Q2)
+let/ti="Potential temperature of air parcel at skin temp"/units="K" surf_pottmp  =  TSK * (1000.0 / (psfc*0.01) ) ^ 0.286  ! psfc is in Pa, hence the 0.01 to mb/hPa
+let/ti="Potential temperature of air parcel at 2m air temp"/units="K" h2m_pottmp =  T2 * (1000.0 / (psfc*0.01) ) ^ 0.286  ! psfc is in Pa, hence the 0.01 to mb/hPa
+let svpt    = surf_pottmp * (1 + 0.61 * shum_2m / (1 - shum_2m)  )
+let h2m_vpt = h2m_pottmp * (1 + 0.61 * shum_2m / (1 - shum_2m)  )   ! some use 2m air temp to calc. mixing height.  this is here to evaluate difference
+
+
+
