@@ -1,0 +1,233 @@
+can va/all
+can da/all
+set mem/size=1000
+
+
+define sym ii "($1)"
+define sym jj "($2)"
+
+! now ddir and sdir are defined in superior script 
+
+!  u10e,v10e rotated to earth relative
+
+
+!let fl1 = SPAWN("ls -1 ($u10) ($u11) ($u12) ($u13) ($u14) ($u15) ($u16) ($u17) ($u18) ($u19) ($u20) ")
+!let fl1 = SPAWN("ls -1 ($ddir)/u10e.i($ii).j($jj).????.nc")
+
+! aggregate hourly files
+! first zonal wind
+let fl1 = SPAWN("ls -1 ($ddir)/????/u10e.i($ii).j($jj).????.nc")
+TSERIES uwnd = fl1
+let u = u10e[d=1]
+
+! meridional wind
+let fl2 = SPAWN("ls -1 ($ddir)/????/v10e.i($ii).j($jj).????.nc")
+TSERIES vwnd = fl2
+let v = v10e[d=2]
+
+
+define sym vr "u"
+let x0 = ($vr)
+let x1 = ($vr)[l=@shf:1]
+let x2 = ($vr)[l=@shf:2]
+let x3 = ($vr)[l=@shf:3]
+let x4 = ($vr)[l=@shf:4]
+let x5 = ($vr)[l=@shf:5]
+let x6 = ($vr)[l=@shf:6]
+let x7 = ($vr)[l=@shf:7]
+let x8 = ($vr)[l=@shf:8]
+let x9 = ($vr)[l=@shf:9]
+let x10 = ($vr)[l=@shf:10]
+let x11 = ($vr)[l=@shf:11]
+let x12 = ($vr)[l=@shf:12]
+let x13 = ($vr)[l=@shf:13]
+let x14 = ($vr)[l=@shf:14]
+let x15 = ($vr)[l=@shf:15]
+let x16 = ($vr)[l=@shf:16]
+let x17 = ($vr)[l=@shf:17]
+let x18 = ($vr)[l=@shf:18]
+let x19 = ($vr)[l=@shf:19]
+let x20 = ($vr)[l=@shf:20]
+let x21 = ($vr)[l=@shf:21]
+let x22 = ($vr)[l=@shf:22]
+let x23 = ($vr)[l=@shf:23]
+
+define sym vr2 "v"
+let y0 = ($vr2)
+let y1 = ($vr2)[l=@shf:1]
+let y2 = ($vr2)[l=@shf:2]
+let y3 = ($vr2)[l=@shf:3]
+let y4 = ($vr2)[l=@shf:4]
+let y5 = ($vr2)[l=@shf:5]
+let y6 = ($vr2)[l=@shf:6]
+let y7 = ($vr2)[l=@shf:7]
+let y8 = ($vr2)[l=@shf:8]
+let y9 = ($vr2)[l=@shf:9]
+let y10 = ($vr2)[l=@shf:10]
+let y11 = ($vr2)[l=@shf:11]
+let y12 = ($vr2)[l=@shf:12]
+let y13 = ($vr2)[l=@shf:13]
+let y14 = ($vr2)[l=@shf:14]
+let y15 = ($vr2)[l=@shf:15]
+let y16 = ($vr2)[l=@shf:16]
+let y17 = ($vr2)[l=@shf:17]
+let y18 = ($vr2)[l=@shf:18]
+let y19 = ($vr2)[l=@shf:19]
+let y20 = ($vr2)[l=@shf:20]
+let y21 = ($vr2)[l=@shf:21]
+let y22 = ($vr2)[l=@shf:22]
+let y23 = ($vr2)[l=@shf:23]
+
+! daytime ave
+let uda0 = (x0+x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12)/13
+let vda0 = (y0+y1+y2+y3+y4+y5+y6+y7+y8+y9+y10+y11+y12)/13
+
+!nighttime ave
+let u_nighttime_ave0 = (x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23)/11 
+let v_nighttime_ave0 = (y13+y14+y15+y16+y17+y18+y19+y20+y21+y22+y23)/11
+
+! start of morning
+define sym hr_smorn "`($hr0)+0`"
+! end of morning
+define sym hr_emorn "`($hr0)+4`"
+
+! start of mid-day
+define sym hr_smid "`($hr0)+5`"
+! end mid-day
+define sym hr_emid "`($hr0)+10`"
+define sym dp_emid "0"
+if `($hr_emid) ge 24` then
+define sym dp_emid "1"
+define sym hr_emid "0`($hr_emid)-24`"
+endif
+
+! start evening
+define sym hr_seve "`($hr0)+11`"
+define sym dp_seve "0"
+if `($hr_seve) ge 24` then
+define sym dp_seve "1"
+define sym hr_seve "0`($hr_seve)-24`"
+endif
+! end evening
+define sym hr_eeve "`($hr0)+15`"
+define sym dp_eeve "0"
+if `($hr_eeve) ge 24` then
+define sym dp_eeve "1"
+define sym hr_eeve "0`($hr_eeve)-24`"
+endif
+
+! morning ave
+let ulst_0500_0900_ave = (x0+x1+x2+x3+x4)/5
+let vlst_0500_0900_ave = (y0+y1+y2+y3+y4)/5
+! mid-day ave
+let ulst_1000_1500_ave = (x5+x6+x7+x8+x9+x10)/6
+let vlst_1000_1500_ave = (y5+y6+y7+y8+y9+y10)/6
+! evening ave
+let ulst_1600_2000_ave = (x11+x12+x13+x14+x15)/5
+let vlst_1600_2000_ave = (y11+y12+y13+y14+y15)/5
+
+
+! wind direction std
+let rad = 180/3.1415926535897932
+let/ti="daytime ave wind vector direction" dir_dt  = atan2(uda0,vda0)
+let/ti="daytime ave wind vector mag" mag_dt  = (uda0*uda0 + vda0*vda0)^0.5
+
+! theta = arcos ( a . b / ( |a| |b|  )
+let d0 = rad * acos ( (x0*uda0 + y0*vda0) / (mag_dt * (x0*x0 + y0*y0)^0.5 )  )
+let d1 = rad * acos ( (x1*uda0 + y1*vda0) / (mag_dt * (x1*x1 + y1*y1)^0.5 )  )
+let d2 = rad * acos ( (x2*uda0 + y2*vda0) / (mag_dt * (x2*x2 + y2*y2)^0.5 )  )
+let d3 = rad * acos ( (x3*uda0 + y3*vda0) / (mag_dt * (x3*x3 + y3*y3)^0.5 )  )
+let d4 = rad * acos ( (x4*uda0 + y4*vda0) / (mag_dt * (x4*x4 + y4*y4)^0.5 )  )
+let d5 = rad * acos ( (x5*uda0 + y5*vda0) / (mag_dt * (x5*x5 + y5*y5)^0.5 )  )
+let d6 = rad * acos ( (x6*uda0 + y6*vda0) / (mag_dt * (x6*x6 + y6*y6)^0.5 )  )
+let d7 = rad * acos ( (x7*uda0 + y7*vda0) / (mag_dt * (x7*x7 + y7*y7)^0.5 )  )
+let d8 = rad * acos ( (x8*uda0 + y8*vda0) / (mag_dt * (x8*x8 + y8*y8)^0.5 )  )
+let d9 = rad * acos ( (x9*uda0 + y9*vda0) / (mag_dt * (x9*x9 + y9*y9)^0.5 )  )
+let d10 = rad * acos ( (x10*uda0 + y10*vda0) / (mag_dt * (x10*x10 + y10*y10)^0.5 )  )
+let d11 = rad * acos ( (x11*uda0 + y11*vda0) / (mag_dt * (x11*x11 + y11*y11)^0.5 )  )
+let d12 = rad * acos ( (x12*uda0 + y12*vda0) / (mag_dt * (x12*x12 + y12*y12)^0.5 )  )
+
+!let d13 = rad*atan2(x13,y13)
+!let d14 = rad*atan2(x14,y14)
+!let d15 = rad*atan2(x15,y15)
+!let d16 = rad*atan2(x16,y16)
+
+let N  = 13
+let mu = (d0+d1+d2+d3+d4+d5+d6+d7+d8+d9+d10+d11+d12)/N
+let n0 = (d0-mu)^2
+let n1 = (d1-mu)^2
+let n2 = (d2-mu)^2
+let n3 = (d3-mu)^2
+let n4 = (d4-mu)^2
+let n5 = (d5-mu)^2
+let n6 = (d6-mu)^2
+let n7 = (d7-mu)^2
+let n8 = (d8-mu)^2
+let n9 = (d9-mu)^2
+let n10 = (d10-mu)^2
+let n11 = (d11-mu)^2
+let n12 = (d12-mu)^2
+
+!let n13 = (d13-mu)^2
+!let n14 = (d14-mu)^2
+!let n15 = (d15-mu)^2
+!let n16 = (d16-mu)^2
+let sum = n0+n1+n2+n3+n4+n5+n6+n7+n8+n9+n10+n11+n12
+let std0 = (sum/N)^0.5
+
+! defined now in wrfdaily_tz
+!define axis/T0="1-jan-2010 ($hr0):00"/units=days/T="1-jan-2010 ($hr0):00":"31-dec-2018 ($hr0):00":1 dta
+
+! define daily variables to save out
+define sym dadef "($hr0)00 to ($hr1)00 (+($dp))"
+define sym nidef "($hr1)00 (+($dp)) to ($hr0)00 (+1)"
+
+let/ti="($hr0)00 to ($hr1)00 (+($dp)) UTC mean Zonal Wind - 10m above ground" u_daytime_ave = uda0[gt=dta@nrst]
+set att/like=u u_daytime_ave
+define ATT u_daytime_ave.long_name = "($dadef) UTC mean Zonal Wind - 10m above ground"
+
+let/ti="($nidef) UTC mean Zonal Wind - 10m above ground" u_nighttime_ave = u_nighttime_ave0[gt=dta@nrst]
+set att/like=($vr) u_nighttime_ave
+define ATT u_nighttime_ave.long_name = "($nidef) UTC mean Zonal Wind - 10m above ground"
+
+let/ti="($dadef) UTC mean Meridional Wind - 10m above ground" v_daytime_ave = vda0[gt=dta@nrst]
+set att/like=($vr2) v_daytime_ave
+define ATT v_daytime_ave.long_name = "($dadef) UTC mean Meridional Wind - 10m above ground"
+
+let/ti="($nidef)) UTC mean Meridional Wind - 10m above ground" v_nighttime_ave = v_nighttime_ave0[gt=dta@nrst]
+set att/like=($vr2) v_nighttime_ave
+define ATT v_nighttime_ave.long_name = "($nidef) UTC mean Meridional Wind - 10m above ground"
+
+let/ti="($dadef) UTC Standard Deviation of 10m Wind Direction" wdir_daytime_std = std0[gt=dta@nrst]
+define ATT wdir_daytime_std.long_name = "($dadef) Standard Deviation of 10m Wind Direction"
+define ATT wdir_daytime_std.units = "degrees"
+
+define sym morndef "($hr_smorn)00 to ($hr_emorn)00"
+let/ti="($morndef) UTC mean Zonal Wind" u_lst_0500_0900_ave = ulst_0500_0900_ave[gt=dta@nrst]
+let/ti="($morndef) UTC mean Merid Wind" v_lst_0500_0900_ave = vlst_0500_0900_ave[gt=dta@nrst]
+set att/like=u u_lst_0500_0900_ave
+set att/like=v v_lst_0500_0900_ave
+define ATT u_lst_0500_0900_ave.long_name = "($morndef) UTC mean Zonal Wind (10m a.g.l.)"
+define ATT v_lst_0500_0900_ave.long_name = "($morndef) UTC mean Merid Wind (10m a.g.l.)"
+
+define sym middef "($hr_smid)00 to ($hr_emid)00 (+($dp_emid))"
+let/ti="($middef) UTC mean Zonal Wind" u_lst_1000_1500_ave = ulst_1000_1500_ave[gt=dta@nrst]
+let/ti="($middef) UTC mean Merid Wind" v_lst_1000_1500_ave = vlst_1000_1500_ave[gt=dta@nrst]
+set att/like=u u_lst_1000_1500_ave
+set att/like=v v_lst_1000_1500_ave
+define ATT u_lst_1000_1500_ave.long_name = "($middef) UTC mean Zonal Wind"
+define ATT v_lst_1000_1500_ave.long_name = "($middef) UTC mean Merid Wind"
+
+define sym evedef "($hr_seve)00 (+($dp_seve)) to ($hr_eeve)00 (+($dp_eeve))"
+let/ti="($evedef) UTC mean Zonal Wind" u_lst_1600_2000_ave = ulst_1600_2000_ave[gt=dta@nrst]
+let/ti="($evedef) UTC mean Merid Wind" v_lst_1600_2000_ave = vlst_1600_2000_ave[gt=dta@nrst]
+set att/like=u u_lst_1600_2000_ave
+set att/like=v v_lst_1600_2000_ave
+define ATT u_lst_1600_2000_ave.long_name = "($evedef) UTC mean Zonal Wind"
+define ATT v_lst_1600_2000_ave.long_name = "($evedef) UTC mean Merid Wind"
+
+save/file="($sdir)/wind.daily.i($ii).j($jj).nc"/clobber  u_daytime_ave, u_nighttime_ave, v_daytime_ave, v_nighttime_ave, wdir_daytime_std, u_lst_0500_0900_ave, v_lst_0500_0900_ave, u_lst_1000_1500_ave, v_lst_1000_1500_ave, u_lst_1600_2000_ave, v_lst_1600_2000_ave
+
+
+
+

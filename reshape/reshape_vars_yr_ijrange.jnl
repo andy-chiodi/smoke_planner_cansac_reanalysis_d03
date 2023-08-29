@@ -1,0 +1,42 @@
+! sources from /home/chiodi/FW/data/YEAR, where YEAR is, e.g. 2019 or 2020 in *_sub.jnl - 
+! variables supported include fm100, fm1000, pr (daily-gridmet), rh2, temp2, vi, tw, w10, mh, pbl, utwe, vtwe, u10e, v10e 
+! example:  go reshape_vars_yr_ijrange.jnl 2010  251 251 1 1
+
+!set mem/size=1000
+define sym yr "($1)"
+
+! data from initial exctraction/calculation -> aggregation here:
+define sym idir "/storage/chiodi/CANSAC_reanalysis/d03/output_data/XYt"
+define sym idir "($6)"
+! will save to:
+!define sym odir "/storage/chiodi/CANSAC_reanalysis/d03/output_data/hourly_time_series/($yr)"  
+define sym odir "($7)/($yr)"
+
+
+!sp date > ($yr)_vars_start.time
+define sym istart  ($2) ! "1"   
+define sym iend    ($3) !"486"  486
+define sym jstart  ($4) !"1"  1
+define sym jend    ($5) !"534"  534
+
+go reshape_gridmet_var_yr_ijrange_sub.jnl fm100  ($yr) ($istart) ($iend) ($jstart) ($jend)
+go reshape_gridmet_var_yr_ijrange_sub.jnl fm1000 ($yr) ($istart) ($iend) ($jstart) ($jend)
+go reshape_gridmet_var_yr_ijrange_sub.jnl pr     ($yr) ($istart) ($iend) ($jstart) ($jend)
+
+go reshape_var_yr_ijrange_sub.jnl mh ($yr) ($istart) ($iend) ($jstart) ($jend)
+go reshape_var_yr_ijrange_sub.jnl mh2 ($yr) ($istart) ($iend) ($jstart) ($jend)
+go reshape_var_yr_ijrange_sub.jnl tw ($yr) ($istart) ($iend) ($jstart) ($jend)
+go reshape_var_yr_ijrange_sub.jnl vi ($yr) ($istart) ($iend) ($jstart) ($jend)
+go reshape_var_yr_ijrange_sub.jnl pbl ($yr) ($istart) ($iend) ($jstart) ($jend)
+go reshape_var_yr_ijrange_sub.jnl utwe ($yr) ($istart) ($iend) ($jstart) ($jend)
+go reshape_var_yr_ijrange_sub.jnl vtwe ($yr) ($istart) ($iend) ($jstart) ($jend)
+go reshape_var_yr_ijrange_sub.jnl u10e ($yr) ($istart) ($iend) ($jstart) ($jend)
+go reshape_var_yr_ijrange_sub.jnl v10e ($yr) ($istart) ($iend) ($jstart) ($jend)
+go reshape_var_yr_ijrange_sub.jnl w10 ($yr) ($istart) ($iend) ($jstart) ($jend)
+go reshape_var_yr_ijrange_sub.jnl temp2 ($yr) ($istart) ($iend) ($jstart) ($jend)
+go reshape_var_yr_ijrange_sub.jnl rh2 ($yr) ($istart) ($iend) ($jstart) ($jend)
+go reshape_var_yr_ijrange_sub.jnl emc ($yr) ($istart) ($iend) ($jstart) ($jend)
+
+
+!sp date > ($yr)_vars_end.time
+!exit/command_file

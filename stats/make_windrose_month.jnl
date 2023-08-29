@@ -1,0 +1,416 @@
+ ! NOAA/PMEL TMAP
+ ! PyFerret v7.42 (optimized)
+ ! Linux 4.4.0-116-generic - 08/10/18
+ !  3-Jan-22 14:50     
+
+can data/all
+can va/all
+
+define sym ii "($1)"  ! 220
+define sym jj "($2)"  ! 36
+define sym level "($3)" ! w10 or tw
+define sym period "($4)"  ! nighttime or daytime
+define sym mn "($5)"  ! e.g. 1,2,..12
+
+if `($mn) eq 1` then
+let mno =  "jan"
+elif `($mn) eq 2` then
+let mno =  "feb"
+elif `($mn) eq 3` then
+let mno =  "mar"
+elif `($mn) eq 4` then
+let mno =  "apr"
+elif `($mn) eq 5` then
+let mno =  "may"
+elif `($mn) eq 6` then
+let mno =  "jun"
+elif `($mn) eq 7` then
+let mno =  "jul"
+elif `($mn) eq 8` then
+let mno =  "aug"
+elif `($mn) eq 9` then
+let mno =  "sep"
+elif `($mn) eq 10` then
+let mno =  "oct"
+elif `($mn) eq 11` then
+let mno =  "nov"
+elif `($mn) eq 12` then
+let mno =  "dec"
+endif
+
+
+! learn if we are working with 10 m wind speed (w10) or transport wind (tw). case does not matter here, in ferret
+if  `{"($level)"} eq {"w10"}`  then 
+define sym zonal "U"
+elif `{"($level)"} eq {"tw"}`  then
+define sym zonal "TU"
+endif
+
+! now meridional
+if  `{"($level)"} eq {"w10"}`  then
+define sym merid "V"
+elif `{"($level)"} eq {"tw"}`  then
+define sym merid "TV"
+endif
+
+! define variables to match those in source daily netcdf
+
+let u = ($zonal)_($period)_ave
+let v = ($merid)_($period)_ave
+
+define sym tfilnm "($level)_direction_($period)" ! e.g. w10_direction_daytime
+
+!use /storage/spark/chiodi/PNW_4km_test_bed/wrf.daily.i($ii).j($jj).nc
+use ($source_dir)/wrf.daily.i($ii).j($jj).nc
+
+! direction and speed:
+let rad = 180.0/3.1415926535897
+let dir0  = atan2(u,v)*rad           ! -180,180
+let magnitude0  = (u*u + v*v)^0.5
+
+! create month mask
+let tt = T[g=dir0] + 40177
+let A = DAYS1900TOYMDHMS(TT)
+let mon = A[k=2]
+let mon_mask = if (mon gt ($mn) - 0.5) and (mon lt ($mn) + 0.5) then 1
+let magnitude  = magnitude0*mon_mask
+let dir = dir0*mon_mask
+
+let windy_mask = if magnitude ge 0.5 then 1
+let calm_mask = if magnitude lt 0.5 then 1
+let/ti="Fraction < 0.5 m/s" calm  =  if (calm_mask[l=@ngd] gt 0) then (`missing(calm_mask[l=@ngd] / magnitude[l=@ngd],-999.9)`) else (-999.9)
+!let/ti="Fraction < 0.5 m/s" calm  =  if (calm_mask[l=@ngd] gt 0) then `calm_mask[l=@ngd] / magnitude[l=@ngd]` else (-999.9)
+
+! mask by calm
+let winddir = dir*windy_mask
+let windmag = magnitude*windy_mask 
+! save number of non-calm days
+let winddays = windmag[l=@ngd]
+let alldays = magnitude[l=@ngd]
+
+! calulate direction bin percentage and in-bin speed distribution for each of 16 directions
+! n, nne, ne, ene, e, ese, se, sse, s, ssw, sw, wsw, w, wnw, nw, nnw
+! convention: report direction wind is coming from. Note: variable "dir" gives opposite
+
+! define 16  directions
+let s   = if ( (winddir gt -11.25) and (winddir le 11.25  )  )  or   ((winddir lt 11.25)  and (winddir gt 0.0)    ) then 1 
+let ssw = if (winddir ge 11.25) and   (winddir lt 33.75) then 1 
+let sw  = if (winddir ge 33.75) and   (winddir lt 56.25) then 1
+let wsw = if (winddir ge 56.25) and   (winddir lt 78.75) then 1
+let w   = if (winddir ge 78.75) and   (winddir lt 101.25) then 1
+let wnw = if (winddir ge 101.25) and  (winddir lt 123.75) then 1
+let nw  = if (winddir ge 123.75) and  (winddir lt 146.25) then 1
+let nnw = if (winddir ge 146.25) and  (winddir lt 168.75) then 1
+let n   = if (winddir ge 168.75) or   (winddir lt -168.75) then 1 
+let nne = if (winddir ge -168.75) and (winddir lt -146.25) then 1
+let northeast  = if (winddir ge -146.25) and (winddir lt -123.75) then 1 
+let ene = if (winddir ge -123.75) and (winddir lt -101.25) then 1
+let e   = if (winddir ge -101.25) and (winddir lt -78.75) then 1
+let ese = if (winddir ge -78.75) and  (winddir lt -56.25) then 1
+let se  = if (winddir ge -56.25) and  (winddir lt -33.75) then 1 
+let sse = if (winddir ge -33.75) and  (winddir lt -11.25) then 1
+
+!define speed bins
+let b1 = if (mspd gt 0.5 ) and (mspd le 2.0) then 1
+let b2 = if (mspd gt 2.0 ) and (mspd le 4.0) then 1
+let b3 = if (mspd gt 4.0 ) and (mspd le 6.0) then 1
+let b4 = if (mspd gt 6.0 ) and (mspd le 8.0) then 1
+let b5 = if (mspd gt 8.0 ) and (mspd le 10.0) then 1
+let b6 = if (mspd gt 10.0 ) then 1 
+
+! list calm
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno,"allDirection","calm", calm
+
+! STATS_HISTOGRAM(VALS, BINS_TEMPLATE)  bins template wants midpoints of bins to use
+! N
+define sym wch "N"
+let mspd = windmag*($wch)
+let mngd = mspd[l=@ngd]
+let mpercent = missing(mngd/alldays,-999.9)
+!let psub = if abs(psub0) lt 999.9e9 then psub0 else (-999.9)
+let mb1 = if abs(b1[l=@ngd]/mngd) lt 999.9e9 then b1[l=@ngd]/mngd else (-999.9)
+let mb2 = if abs(b2[l=@ngd]/mngd) lt 999.9e9 then b2[l=@ngd]/mngd else (-999.9)
+let mb3 = if abs(b3[l=@ngd]/mngd) lt 999.9e9 then b3[l=@ngd]/mngd else (-999.9)
+let mb4 = if abs(b4[l=@ngd]/mngd) lt 999.9e9 then b4[l=@ngd]/mngd else (-999.9)
+let mb5 = if abs(b5[l=@ngd]/mngd) lt 999.9e9 then b5[l=@ngd]/mngd else (-999.9) 
+let mb6 = if abs(b6[l=@ngd]/mngd) lt 999.9e9 then b6[l=@ngd]/mngd else (-999.9)
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "fraction",  mpercent
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "p5to2", mb1
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "2to4", mb2
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "4to6", mb3
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "6to8", mb4
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "8to10", mb5
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "gt10", mb6
+
+! NNE
+define sym wch "NNE"
+let mspd = windmag*($wch)
+let mngd = mspd[l=@ngd]
+let mpercent = missing(mngd/alldays,-999.9)
+let mb1 = if abs(b1[l=@ngd]/mngd) lt 999.9e9 then b1[l=@ngd]/mngd else (-999.9)
+let mb2 = if abs(b2[l=@ngd]/mngd) lt 999.9e9 then b2[l=@ngd]/mngd else (-999.9)
+let mb3 = if abs(b3[l=@ngd]/mngd) lt 999.9e9 then b3[l=@ngd]/mngd else (-999.9)
+let mb4 = if abs(b4[l=@ngd]/mngd) lt 999.9e9 then b4[l=@ngd]/mngd else (-999.9)
+let mb5 = if abs(b5[l=@ngd]/mngd) lt 999.9e9 then b5[l=@ngd]/mngd else (-999.9)
+let mb6 = if abs(b6[l=@ngd]/mngd) lt 999.9e9 then b6[l=@ngd]/mngd else (-999.9)
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)","fraction", mpercent
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "p5to2", mb1
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "2to4", mb2
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "4to6", mb3
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "6to8", mb4
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "8to10", mb5
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "gt10", mb6
+
+! NE
+define sym wch "northeast"
+let mspd = windmag*($wch)
+let mngd = mspd[l=@ngd]
+let mpercent = missing(mngd/alldays,-999.9)
+let mb1 = if abs(b1[l=@ngd]/mngd) lt 999.9e9 then b1[l=@ngd]/mngd else (-999.9)
+let mb2 = if abs(b2[l=@ngd]/mngd) lt 999.9e9 then b2[l=@ngd]/mngd else (-999.9)
+let mb3 = if abs(b3[l=@ngd]/mngd) lt 999.9e9 then b3[l=@ngd]/mngd else (-999.9)
+let mb4 = if abs(b4[l=@ngd]/mngd) lt 999.9e9 then b4[l=@ngd]/mngd else (-999.9)
+let mb5 = if abs(b5[l=@ngd]/mngd) lt 999.9e9 then b5[l=@ngd]/mngd else (-999.9)
+let mb6 = if abs(b6[l=@ngd]/mngd) lt 999.9e9 then b6[l=@ngd]/mngd else (-999.9)
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "NE","fraction", mpercent
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "NE", "p5to2", mb1
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "NE", "2to4", mb2
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "NE", "4to6", mb3
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "NE", "6to8", mb4
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "NE", "8to10", mb5
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "NE", "gt10", mb6
+
+define sym wch "ENE"
+let mspd = windmag*($wch)
+let mngd = mspd[l=@ngd]
+let mpercent = missing(mngd/alldays,-999.9)
+let mb1 = if abs(b1[l=@ngd]/mngd) lt 999.9e9 then b1[l=@ngd]/mngd else (-999.9)
+let mb2 = if abs(b2[l=@ngd]/mngd) lt 999.9e9 then b2[l=@ngd]/mngd else (-999.9)
+let mb3 = if abs(b3[l=@ngd]/mngd) lt 999.9e9 then b3[l=@ngd]/mngd else (-999.9)
+let mb4 = if abs(b4[l=@ngd]/mngd) lt 999.9e9 then b4[l=@ngd]/mngd else (-999.9)
+let mb5 = if abs(b5[l=@ngd]/mngd) lt 999.9e9 then b5[l=@ngd]/mngd else (-999.9)
+let mb6 = if abs(b6[l=@ngd]/mngd) lt 999.9e9 then b6[l=@ngd]/mngd else (-999.9)
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)","fraction", mpercent
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "p5to2", mb1
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "2to4", mb2
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "4to6", mb3
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "6to8", mb4
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "8to10", mb5
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "gt10", mb6
+
+define sym wch "E"
+let mspd = windmag*($wch)
+let mngd = mspd[l=@ngd]
+let mpercent = missing(mngd/alldays,-999.9)
+let mb1 = if abs(b1[l=@ngd]/mngd) lt 999.9e9 then b1[l=@ngd]/mngd else (-999.9)
+let mb2 = if abs(b2[l=@ngd]/mngd) lt 999.9e9 then b2[l=@ngd]/mngd else (-999.9)
+let mb3 = if abs(b3[l=@ngd]/mngd) lt 999.9e9 then b3[l=@ngd]/mngd else (-999.9)
+let mb4 = if abs(b4[l=@ngd]/mngd) lt 999.9e9 then b4[l=@ngd]/mngd else (-999.9)
+let mb5 = if abs(b5[l=@ngd]/mngd) lt 999.9e9 then b5[l=@ngd]/mngd else (-999.9)
+let mb6 = if abs(b6[l=@ngd]/mngd) lt 999.9e9 then b6[l=@ngd]/mngd else (-999.9)
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)","fraction", mpercent
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "p5to2", mb1
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "2to4", mb2
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "4to6", mb3
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "6to8", mb4
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "8to10", mb5
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "gt10", mb6
+
+define sym wch "ESE"
+let mspd = windmag*($wch)
+let mngd = mspd[l=@ngd]
+let mpercent = missing(mngd/alldays,-999.9)
+let mb1 = if abs(b1[l=@ngd]/mngd) lt 999.9e9 then b1[l=@ngd]/mngd else (-999.9)
+let mb2 = if abs(b2[l=@ngd]/mngd) lt 999.9e9 then b2[l=@ngd]/mngd else (-999.9)
+let mb3 = if abs(b3[l=@ngd]/mngd) lt 999.9e9 then b3[l=@ngd]/mngd else (-999.9)
+let mb4 = if abs(b4[l=@ngd]/mngd) lt 999.9e9 then b4[l=@ngd]/mngd else (-999.9)
+let mb5 = if abs(b5[l=@ngd]/mngd) lt 999.9e9 then b5[l=@ngd]/mngd else (-999.9)
+let mb6 = if abs(b6[l=@ngd]/mngd) lt 999.9e9 then b6[l=@ngd]/mngd else (-999.9)
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)","fraction", mpercent
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "p5to2", mb1
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "2to4", mb2
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "4to6", mb3
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "6to8", mb4
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "8to10", mb5
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "gt10", mb6
+
+define sym wch "SE"
+let mspd = windmag*($wch)
+let mngd = mspd[l=@ngd]
+let mpercent = missing(mngd/alldays,-999.9)
+let mb1 = if abs(b1[l=@ngd]/mngd) lt 999.9e9 then b1[l=@ngd]/mngd else (-999.9)
+let mb2 = if abs(b2[l=@ngd]/mngd) lt 999.9e9 then b2[l=@ngd]/mngd else (-999.9)
+let mb3 = if abs(b3[l=@ngd]/mngd) lt 999.9e9 then b3[l=@ngd]/mngd else (-999.9)
+let mb4 = if abs(b4[l=@ngd]/mngd) lt 999.9e9 then b4[l=@ngd]/mngd else (-999.9)
+let mb5 = if abs(b5[l=@ngd]/mngd) lt 999.9e9 then b5[l=@ngd]/mngd else (-999.9)
+let mb6 = if abs(b6[l=@ngd]/mngd) lt 999.9e9 then b6[l=@ngd]/mngd else (-999.9)
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)","fraction", mpercent
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "p5to2", mb1
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "2to4", mb2
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "4to6", mb3
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "6to8", mb4
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "8to10", mb5
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "gt10", mb6
+
+define sym wch "SSE"
+let mspd = windmag*($wch)
+let mngd = mspd[l=@ngd]
+let mpercent = missing(mngd/alldays,-999.9)
+let mb1 = if abs(b1[l=@ngd]/mngd) lt 999.9e9 then b1[l=@ngd]/mngd else (-999.9)
+let mb2 = if abs(b2[l=@ngd]/mngd) lt 999.9e9 then b2[l=@ngd]/mngd else (-999.9)
+let mb3 = if abs(b3[l=@ngd]/mngd) lt 999.9e9 then b3[l=@ngd]/mngd else (-999.9)
+let mb4 = if abs(b4[l=@ngd]/mngd) lt 999.9e9 then b4[l=@ngd]/mngd else (-999.9)
+let mb5 = if abs(b5[l=@ngd]/mngd) lt 999.9e9 then b5[l=@ngd]/mngd else (-999.9)
+let mb6 = if abs(b6[l=@ngd]/mngd) lt 999.9e9 then b6[l=@ngd]/mngd else (-999.9)
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)","fraction", mpercent
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "p5to2", mb1
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "2to4", mb2
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "4to6", mb3
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "6to8", mb4
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "8to10", mb5
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "gt10", mb6
+
+define sym wch "S"
+let mspd = windmag*($wch)
+let mngd = mspd[l=@ngd]
+let mpercent = missing(mngd/alldays,-999.9)
+let mb1 = if abs(b1[l=@ngd]/mngd) lt 999.9e9 then b1[l=@ngd]/mngd else (-999.9)
+let mb2 = if abs(b2[l=@ngd]/mngd) lt 999.9e9 then b2[l=@ngd]/mngd else (-999.9)
+let mb3 = if abs(b3[l=@ngd]/mngd) lt 999.9e9 then b3[l=@ngd]/mngd else (-999.9)
+let mb4 = if abs(b4[l=@ngd]/mngd) lt 999.9e9 then b4[l=@ngd]/mngd else (-999.9)
+let mb5 = if abs(b5[l=@ngd]/mngd) lt 999.9e9 then b5[l=@ngd]/mngd else (-999.9)
+let mb6 = if abs(b6[l=@ngd]/mngd) lt 999.9e9 then b6[l=@ngd]/mngd else (-999.9)
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)","fraction", mpercent
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "p5to2", mb1
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "2to4", mb2
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "4to6", mb3
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "6to8", mb4
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "8to10", mb5
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "gt10", mb6
+
+define sym wch "SSW"
+let mspd = windmag*($wch)
+let mngd = mspd[l=@ngd]
+let mpercent = missing(mngd/alldays,-999.9)
+let mb1 = if abs(b1[l=@ngd]/mngd) lt 999.9e9 then b1[l=@ngd]/mngd else (-999.9)
+let mb2 = if abs(b2[l=@ngd]/mngd) lt 999.9e9 then b2[l=@ngd]/mngd else (-999.9)
+let mb3 = if abs(b3[l=@ngd]/mngd) lt 999.9e9 then b3[l=@ngd]/mngd else (-999.9)
+let mb4 = if abs(b4[l=@ngd]/mngd) lt 999.9e9 then b4[l=@ngd]/mngd else (-999.9)
+let mb5 = if abs(b5[l=@ngd]/mngd) lt 999.9e9 then b5[l=@ngd]/mngd else (-999.9)
+let mb6 = if abs(b6[l=@ngd]/mngd) lt 999.9e9 then b6[l=@ngd]/mngd else (-999.9)
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)","fraction", mpercent
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "p5to2", mb1
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "2to4", mb2
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "4to6", mb3
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "6to8", mb4
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "8to10", mb5
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "gt10", mb6
+
+define sym wch "SW"
+let mspd = windmag*($wch)
+let mngd = mspd[l=@ngd]
+let mpercent = missing(mngd/alldays,-999.9)
+let mb1 = if abs(b1[l=@ngd]/mngd) lt 999.9e9 then b1[l=@ngd]/mngd else (-999.9)
+let mb2 = if abs(b2[l=@ngd]/mngd) lt 999.9e9 then b2[l=@ngd]/mngd else (-999.9)
+let mb3 = if abs(b3[l=@ngd]/mngd) lt 999.9e9 then b3[l=@ngd]/mngd else (-999.9)
+let mb4 = if abs(b4[l=@ngd]/mngd) lt 999.9e9 then b4[l=@ngd]/mngd else (-999.9)
+let mb5 = if abs(b5[l=@ngd]/mngd) lt 999.9e9 then b5[l=@ngd]/mngd else (-999.9)
+let mb6 = if abs(b6[l=@ngd]/mngd) lt 999.9e9 then b6[l=@ngd]/mngd else (-999.9)
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)","fraction", mpercent
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "p5to2", mb1
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "2to4", mb2
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "4to6", mb3
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "6to8", mb4
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "8to10", mb5
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "gt10", mb6
+
+define sym wch "WSW"
+let mspd = windmag*($wch)
+let mngd = mspd[l=@ngd]
+let mpercent = missing(mngd/alldays,-999.9)
+let mb1 = if abs(b1[l=@ngd]/mngd) lt 999.9e9 then b1[l=@ngd]/mngd else (-999.9)
+let mb2 = if abs(b2[l=@ngd]/mngd) lt 999.9e9 then b2[l=@ngd]/mngd else (-999.9)
+let mb3 = if abs(b3[l=@ngd]/mngd) lt 999.9e9 then b3[l=@ngd]/mngd else (-999.9)
+let mb4 = if abs(b4[l=@ngd]/mngd) lt 999.9e9 then b4[l=@ngd]/mngd else (-999.9)
+let mb5 = if abs(b5[l=@ngd]/mngd) lt 999.9e9 then b5[l=@ngd]/mngd else (-999.9)
+let mb6 = if abs(b6[l=@ngd]/mngd) lt 999.9e9 then b6[l=@ngd]/mngd else (-999.9)
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)","fraction", mpercent
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "p5to2", mb1
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "2to4", mb2
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "4to6", mb3
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "6to8", mb4
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "8to10", mb5
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "gt10", mb6
+
+define sym wch "W"
+let mspd = windmag*($wch)
+let mngd = mspd[l=@ngd]
+let mpercent = missing(mngd/alldays,-999.9)
+let mb1 = if abs(b1[l=@ngd]/mngd) lt 999.9e9 then b1[l=@ngd]/mngd else (-999.9)
+let mb2 = if abs(b2[l=@ngd]/mngd) lt 999.9e9 then b2[l=@ngd]/mngd else (-999.9)
+let mb3 = if abs(b3[l=@ngd]/mngd) lt 999.9e9 then b3[l=@ngd]/mngd else (-999.9)
+let mb4 = if abs(b4[l=@ngd]/mngd) lt 999.9e9 then b4[l=@ngd]/mngd else (-999.9)
+let mb5 = if abs(b5[l=@ngd]/mngd) lt 999.9e9 then b5[l=@ngd]/mngd else (-999.9)
+let mb6 = if abs(b6[l=@ngd]/mngd) lt 999.9e9 then b6[l=@ngd]/mngd else (-999.9)
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)","fraction", mpercent
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "p5to2", mb1
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "2to4", mb2
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "4to6", mb3
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "6to8", mb4
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "8to10", mb5
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "gt10", mb6
+
+define sym wch "WNW"
+let mspd = windmag*($wch)
+let mngd = mspd[l=@ngd]
+let mpercent = missing(mngd/alldays,-999.9)
+let mb1 = if abs(b1[l=@ngd]/mngd) lt 999.9e9 then b1[l=@ngd]/mngd else (-999.9)
+let mb2 = if abs(b2[l=@ngd]/mngd) lt 999.9e9 then b2[l=@ngd]/mngd else (-999.9)
+let mb3 = if abs(b3[l=@ngd]/mngd) lt 999.9e9 then b3[l=@ngd]/mngd else (-999.9)
+let mb4 = if abs(b4[l=@ngd]/mngd) lt 999.9e9 then b4[l=@ngd]/mngd else (-999.9)
+let mb5 = if abs(b5[l=@ngd]/mngd) lt 999.9e9 then b5[l=@ngd]/mngd else (-999.9)
+let mb6 = if abs(b6[l=@ngd]/mngd) lt 999.9e9 then b6[l=@ngd]/mngd else (-999.9)
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)","fraction", mpercent
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "p5to2", mb1
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "2to4", mb2
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "4to6", mb3
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "6to8", mb4
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "8to10", mb5
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "gt10", mb6
+
+define sym wch "NW"
+let mspd = windmag*($wch)
+let mngd = mspd[l=@ngd]
+let mpercent = missing(mngd/alldays,-999.9)
+let mb1 = if abs(b1[l=@ngd]/mngd) lt 999.9e9 then b1[l=@ngd]/mngd else (-999.9)
+let mb2 = if abs(b2[l=@ngd]/mngd) lt 999.9e9 then b2[l=@ngd]/mngd else (-999.9)
+let mb3 = if abs(b3[l=@ngd]/mngd) lt 999.9e9 then b3[l=@ngd]/mngd else (-999.9)
+let mb4 = if abs(b4[l=@ngd]/mngd) lt 999.9e9 then b4[l=@ngd]/mngd else (-999.9)
+let mb5 = if abs(b5[l=@ngd]/mngd) lt 999.9e9 then b5[l=@ngd]/mngd else (-999.9)
+let mb6 = if abs(b6[l=@ngd]/mngd) lt 999.9e9 then b6[l=@ngd]/mngd else (-999.9)
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)","fraction", mpercent
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "p5to2", mb1
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "2to4", mb2
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "4to6", mb3
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "6to8", mb4
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "8to10", mb5
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "gt10", mb6
+
+define sym wch "NNW"
+let mspd = windmag*($wch)
+let mngd = mspd[l=@ngd]
+let mpercent = missing(mngd/alldays,-999.9)
+let mb1 = if abs(b1[l=@ngd]/mngd) lt 999.9e9 then b1[l=@ngd]/mngd else (-999.9)
+let mb2 = if abs(b2[l=@ngd]/mngd) lt 999.9e9 then b2[l=@ngd]/mngd else (-999.9)
+let mb3 = if abs(b3[l=@ngd]/mngd) lt 999.9e9 then b3[l=@ngd]/mngd else (-999.9)
+let mb4 = if abs(b4[l=@ngd]/mngd) lt 999.9e9 then b4[l=@ngd]/mngd else (-999.9)
+let mb5 = if abs(b5[l=@ngd]/mngd) lt 999.9e9 then b5[l=@ngd]/mngd else (-999.9)
+let mb6 = if abs(b6[l=@ngd]/mngd) lt 999.9e9 then b6[l=@ngd]/mngd else (-999.9)
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)","fraction", mpercent
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "p5to2", mb1
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "2to4", mb2
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "4to6", mb3
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "6to8", mb4
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "8to10", mb5
+list/quiet/file=($tfilnm).i($ii).j($jj).txt/append/nohead/form=(a7,a14,a10,F12.3)  mno, "($wch)", "gt10", mb6
+

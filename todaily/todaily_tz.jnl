@@ -1,0 +1,193 @@
+can va/all
+can da/all
+set mem/size=1000
+
+define sym vr "($1)"
+define sym ii "($2)"
+define sym jj "($3)"
+!define sym os "($4)"  ! time zone offset w.r.t. UTC in hours (e.g. PST = -8)
+
+! ddir and sdir need to be already defined for this to work
+! hr0 is "`5 - ($os)`", PST = 13, MST = 12, CST = 11, EST=10
+! define periods of interest, e.g. daytime, nighttime, central WA burn period, etc.
+
+! the end of "daytime" by our definition
+define sym hr1 "`($hr0)+12`"
+define sym dp "0"
+if `($hr1) ge 24` then
+define sym dp "1"
+define sym hr1 "0`($hr1)-24`"
+endif
+! start of morning
+define sym hr_smorn "`($hr0)+0`"
+! end of morning
+define sym hr_emorn "`($hr0)+4`"
+! start of morning
+define sym hr_smorn "`($hr0)+0`"
+! end of morning
+define sym hr_emorn "`($hr0)+4`"
+! start evening
+define sym hr_seve "`($hr0)+11`"
+define sym dp_seve "0"
+if `($hr_seve) ge 24` then
+define sym dp_seve "1"
+define sym hr_seve "0`($hr_seve)-24`"
+endif
+! end evening
+define sym hr_eeve "`($hr0)+15`"
+define sym dp_eeve "0"
+if `($hr_eeve) ge 24` then
+define sym dp_eeve "1"
+define sym hr_eeve "0`($hr_eeve)-24`"
+endif
+
+
+! if a subset of years is desired
+!define sym y10 "($ddir)/2010/($vr).i($ii).j($jj).2010.nc"
+!define sym y11 "($ddir)/2011/($vr).i($ii).j($jj).2011.nc"
+!define sym y12 "($ddir)/2012/($vr).i($ii).j($jj).2012.nc"
+!define sym y13 "($ddir)/2013/($vr).i($ii).j($jj).2013.nc"
+!define sym y14 "($ddir)/2014/($vr).i($ii).j($jj).2014.nc"
+!define sym y15 "($ddir)/2015/($vr).i($ii).j($jj).2015.nc"
+!define sym y16 "($ddir)/2016/($vr).i($ii).j($jj).2016.nc"
+!define sym y17 "($ddir)/2017/($vr).i($ii).j($jj).2017.nc"
+!define sym y18 "($ddir)/2018/($vr).i($ii).j($jj).2018.nc"
+!define sym y19 "($ddir)/2019/($vr).i($ii).j($jj).2019.nc"
+!define sym y20 "($ddir)/2020/($vr).i($ii).j($jj).2020.nc"
+!let fl = SPAWN("ls -1 ($y10) ($y11) ($y12) ($y13) ($y14) ($y15) ($y16) ($y17) ($y18) ($y19) ($y20) ")
+
+! aggregate hourly files
+let fl = SPAWN("ls -1 ($ddir)/*/($vr).i($ii).j($jj).*.nc")
+TSERIES mv = fl
+
+let s0 = ($vr)
+let s1 = ($vr)[l=@shf:1]
+let s2 = ($vr)[l=@shf:2]
+let s3 = ($vr)[l=@shf:3]
+let s4 = ($vr)[l=@shf:4]
+let s5 = ($vr)[l=@shf:5]
+let s6 = ($vr)[l=@shf:6]
+let s7 = ($vr)[l=@shf:7]
+let s8 = ($vr)[l=@shf:8]
+let s9 = ($vr)[l=@shf:9]
+let s10 = ($vr)[l=@shf:10]
+let s11 = ($vr)[l=@shf:11]
+let s12 = ($vr)[l=@shf:12]
+
+let s13 = ($vr)[l=@shf:13]
+let s14 = ($vr)[l=@shf:14]
+let s15 = ($vr)[l=@shf:15]
+let s16 = ($vr)[l=@shf:16]
+let s17 = ($vr)[l=@shf:17]
+let s18 = ($vr)[l=@shf:18]
+let s19 = ($vr)[l=@shf:19]
+let s20 = ($vr)[l=@shf:20]
+let s21 = ($vr)[l=@shf:21]
+let s22 = ($vr)[l=@shf:22]
+let s23 = ($vr)[l=@shf:23]
+
+! find daily (24hr) max
+let a1 = max(s0,s1)
+let a2 = max(s2,s3)
+let a3 = max(s4,s5)
+let a4 = max(s6,s7)
+let a5 = max(s8,s9)
+let a6 = max(s10,s11)
+let a7 = max(s12,s13)
+let a8 = max(s14,s15)
+let a9 = max(s16,s17)
+let a10 = max(s18,s19)
+let a11 = max(s20,s21)
+let a12 = max(s22,s23)
+
+let aa1 = max(a1,a2)
+let aa2 = max(a3,a4)
+let aa3 = max(a5,a6)
+let aa4 = max(a7,a8)
+let aa5 = max(a9,a10)
+let aa6 = max(a11,a12)
+
+let aaa1 = max(aa1,aa2)
+let aaa2 = max(aa3,aa4)
+let aaa3 = max(aa5,aa6)
+
+let dmax = max(max(aaa1,aaa2),aaa3)
+
+! find daily (24 hr) minimum
+let b1 = min(s0,s1)
+let b2 = min(s2,s3)
+let b3 = min(s4,s5)
+let b4 = min(s6,s7)
+let b5 = min(s8,s9)
+let b6 = min(s10,s11)
+let b7 = min(s12,s13)
+let b8 = min(s14,s15)
+let b9 = min(s16,s17)
+let b10 = min(s18,s19)
+let b11 = min(s20,s21)
+let b12 = min(s22,s23)
+
+let bb1 = min(b1,b2)
+let bb2 = min(b3,b4)
+let bb3 = min(b5,b6)
+let bb4 = min(b7,b8)
+let bb5 = min(b9,b10)
+let bb6 = min(b11,b12)
+
+let bbb1 = min(bb1,bb2)
+let bbb2 = min(bb3,bb4)
+let bbb3 = min(bb5,bb6)
+
+let dmin = min(min(bbb1,bbb2),bbb3)
+
+! daytime ave
+let daytime_ave = (s0+s1+s2+s3+s4+s5+s6+s7+s8+s9+s10+s11+s12)/13
+!nighttime ave
+let nighttime_ave = (s13+s14+s15+s16+s17+s18+s19+s20+s21+s22+s23)/11 
+! morning ave
+let lst_0500_0900_ave = (s0+s1+s2+s3+s4)/5
+! mid-day ave
+let lst_1000_1500_ave = (s5+s6+s7+s8+s9+s10)/6
+! evening ave
+let lst_1600_2000_ave = (s11+s12+s13+s14+s15)/5
+
+
+! dta now defined in higher level script
+! define daily variables to save out
+! add transfer of units
+
+let/ti="($hr0)00 to ($hr0)00(+1) UTC minimum ($vr)" ($vr)_min = dmin[gt=dta@nrst]
+set att/like=($vr) ($vr)_min
+define ATT ($vr)_min.long_name = "($hr0)00 to ($hr0)00 (+1) UTC minimum ($vr)"
+
+let/ti="($hr0)00 to ($hr0)00(+1) UTC maximum ($vr)" ($vr)_max = dmax[gt=dta@nrst]
+set att/like=($vr) ($vr)_max
+define ATT ($vr)_max.long_name = "($hr0)00 to ($hr0)00(+1) UTC maximum ($vr)"
+
+define sym dadef "($hr0)00 to ($hr1)00 (+($dp))"
+let/ti="($dadef) UTC mean ($vr)" ($vr)_daytime_ave = daytime_ave[gt=dta@nrst]
+set att/like=($vr) ($vr)_daytime_ave
+define ATT ($vr)_daytime_ave.long_name = "($dadef) UTC mean ($vr)"
+
+define sym nidef "($hr1)00 (+($dp)) to ($hr0)00 (+1)"
+let/ti="($nidef) UTC mean ($vr)" ($vr)_nighttime_ave = nighttime_ave[gt=dta@nrst]
+set att/like=($vr) ($vr)_nighttime_ave
+define ATT ($vr)_nighttime_ave.long_name = "($nidef) UTC mean ($vr)"
+
+define sym morndef "($hr_smorn)00 to ($hr_emorn)00"
+let/ti="($morndef) UTC mean ($vr)" ($vr)_lst_0500_0900_ave = lst_0500_0900_ave[gt=dta@nrst]
+set att/like=($vr) ($vr)_lst_0500_0900_ave
+define ATT ($vr)_lst_0500_0900_ave.long_name = "($morndef) UTC mean ($vr)"
+
+define sym middef "($hr_smid)00 to ($hr_emid)00 (+($dp_emid))"
+let/ti="($middef) UTC mean ($vr)" ($vr)_lst_1000_1500_ave = lst_1000_1500_ave[gt=dta@nrst]
+set att/like=($vr) ($vr)_lst_1000_1500_ave
+define ATT ($vr)_lst_1000_1500_ave.long_name = "($middef) UTC mean ($vr)"
+
+define sym evedef "($hr_seve)00 (+($dp_seve) to ($hr_eeve)00 (+($dp_eeve))"
+let/ti="($evedef) UTC mean ($vr)" ($vr)_lst_1600_2000_ave = lst_1600_2000_ave[gt=dta@nrst]
+set att/like=($vr) ($vr)_lst_1600_2000_ave
+define ATT ($vr)_lst_1600_2000_ave.long_name = "($evedef) UTC mean ($vr)"
+
+save/file="($sdir)/($vr).daily.i($ii).j($jj).nc"/clobber  ($vr)_daytime_ave, ($vr)_nighttime_ave, ($vr)_max, ($vr)_min,($vr)_lst_0500_0900_ave, ($vr)_lst_1000_1500_ave, ($vr)_lst_1600_2000_ave
+

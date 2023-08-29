@@ -1,0 +1,30 @@
+ ! NOAA/PMEL TMAP
+ ! FERRET v7.42 (optimized)
+ ! Linux 2.6.32-754.2.1.el6.x86_64 64-bit - 07/23/18
+ ! 17-Jan-20 09:53     
+
+! reshape from 1-time(hourly)-all-XY files to 1-space(XYpoint)-all-time
+!set mem/size=750
+can da/all
+can va/all
+define sym vn "($1)"   ! variable name 
+define sym yr "($2)"   ! year of wrf archive
+define sym i1  "($3)"  ! wrf i 
+define sym i2  "($4)"  ! wrf i
+define sym j1  "($5)"  ! wrf j
+define sym j2  "($6)"  ! wrf i   
+
+use ($idir)/($yr)/($vn).($yr).nc
+
+!let fl = SPAWN("ls -1 ($idir)/($yr)/($vn).($yr).*.nc")
+!TSERIES ($vn) = fl
+
+repeat/range=($i1):($i2)/name=iloop ( ;\
+define sym i "`iloop`" ;\
+repeat/range=($j1):($j2)/name=jloop ( ;\
+define sym j "`jloop`" ;\
+save/clobber/file="($odir)/($vn).i($i).j($j).($yr).nc" ($vn)[i=($i),j=($j)] ;\
+))
+
+
+

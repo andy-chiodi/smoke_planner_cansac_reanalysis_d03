@@ -1,0 +1,38 @@
+can da/all
+can va/all
+
+define sym ilon "($1)"
+define sym jlat "($2)"
+define sym toff "($3)"  ! time zone offset w.r.t. UTC in hours (e.g. PST = -8)
+
+! looks for data to use from this dir
+!define sym ddir "/storage/spark/chiodi/UW_4km_WRF_smoke_planner_met/hourly_time_series"
+define sym ddir "($4)"
+
+! saves daily files here
+!define sym sdir "/storage/spark/chiodi/UW_4km_WRF_smoke_planner_met/daily_netcdf"
+define sym sdir "($5)"
+
+! start year of data archive
+define sym syr "($6)"
+! end year of data archive
+define sym eyr "($7)"
+
+! hr0 is reference hour for daily averaging. our days start with this hour UTC
+define sym hr0 "`5 - ($toff)`"  ! PST = 13, MST = 12, CST = 11, EST=10
+define axis/T0="1-jan-($syr) ($hr0):00"/units=days/T="1-jan-($syr) ($hr0):00":"31-dec-($eyr) ($hr0):00":1 dta
+
+go todaily_tz vi ($ilon) ($jlat)
+go todaily_tz tw ($ilon) ($jlat) 
+go todaily_tz mh ($ilon) ($jlat) 
+go todaily_tz mh2 ($ilon) ($jlat)
+go todaily_tz pbl ($ilon) ($jlat) 
+go todaily_tz rh2 ($ilon) ($jlat) 
+go todaily_tz temp2 ($ilon) ($jlat)
+go todaily_tz w10 ($ilon) ($jlat) 
+go todaily_tz emc ($ilon) ($jlat)   
+go todaily_wind_tz  ($ilon) ($jlat) 
+go todaily_transport_wind_tz  ($ilon) ($jlat) 
+go merge ($ilon) ($jlat) 
+go gridmet_append_vars_ij ($ilon) ($jlat)
+

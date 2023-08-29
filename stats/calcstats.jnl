@@ -1,0 +1,27 @@
+
+can va/all
+can da/all
+
+! i,j, var_name, e.g. 220 36 w10_daytime_ave
+
+define sym i0 "($1)"
+define sym j0 "($2)"
+define sym vn0 "($3)"
+!define sym source_dir "/home/chiodi/FW/tool1/V5/data/working/daily"
+!define sym source_dir "/storage/spark/chiodi/UW_4km_WRF_smoke_planner_met/daily_netcdf"
+define sym source_dir "($4)"
+
+
+go make_percentiles.jnl ($i0) ($j0) ($vn0)
+go make_percentiles_month.jnl ($i0) ($j0) ($vn0) 1
+go make_percentiles_month.jnl ($i0) ($j0) ($vn0) 2
+go make_percentiles_month.jnl ($i0) ($j0) ($vn0) 3
+go make_percentiles_month.jnl ($i0) ($j0) ($vn0) 4
+go make_percentiles_month.jnl ($i0) ($j0) ($vn0) 5
+go make_percentiles_month.jnl ($i0) ($j0) ($vn0) 6
+go make_percentiles_month.jnl ($i0) ($j0) ($vn0) 7
+go make_percentiles_month.jnl ($i0) ($j0) ($vn0) 8
+go make_percentiles_month.jnl ($i0) ($j0) ($vn0) 9
+go make_percentiles_month.jnl ($i0) ($j0) ($vn0) 10
+go make_percentiles_month.jnl ($i0) ($j0) ($vn0) 11
+go make_percentiles_month.jnl ($i0) ($j0) ($vn0) 12

@@ -1,0 +1,32 @@
+ ! NOAA/PMEL TMAP
+ ! PyFerret v7.42 (optimized)
+ ! Linux 4.4.0-116-generic - 08/10/18
+ !  3-Jan-22 14:50     
+
+can data/all
+can va/all
+
+define sym ii "($1)"  ! 220
+define sym jj "($2)"  ! 36
+define sym vn "($3)"  ! "fm1000_gridmet"
+
+!use /storage/spark/chiodi/PNW_4km_test_bed/wrf.daily.i($ii).j($jj).nc
+use ($source_dir)/wrf.daily.i($ii).j($jj).nc
+
+let md = ($vn)
+
+define axis/X=0:100:1 xax
+define grid/X=xax xg
+let/ti="Percentile" xx = X[g=xg]
+
+let/ti="Value at percentile" p = stats_scoresatpercentiles(md,xx) 
+
+let sub = {0,3,5,10,25,50,75,90,95,97,100}
+let psub0 = stats_scoresatpercentiles(md,sub)
+
+!plot/vs/line=1 xx,p
+!plot/ov/vs/sym=2/nolab sub,psub
+
+let psub = if abs(psub0) lt 999.9e9 then psub0 else (-999.9)
+
+list/quiet/file=($vn).i($ii).j($jj).txt/clobber/nohead/form=(I3,F12.2) sub,psub

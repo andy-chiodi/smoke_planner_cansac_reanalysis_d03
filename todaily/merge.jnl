@@ -1,0 +1,68 @@
+ ! NOAA/PMEL TMAP
+ ! FERRET v7.42 (optimized)
+ ! Linux 2.6.32-754.2.1.el6.x86_64 64-bit - 07/23/18
+ !  1-Feb-21 10:21     
+
+can va/all
+can da/all
+
+define sym ix "($1)"
+define sym jy "($2)"
+
+! sdir is defined in wrfdaily_tz.py
+
+
+define sym mv "mh"
+use "($sdir)/($mv).daily.i($ix).j($jy).nc"
+save/file="($sdir)/wrf.daily.i($ix).j($jy).nc"/clobber ($mv)_daytime_ave,($mv)_nighttime_ave,($mv)_max,($mv)_min, ($mv)_lst_0500_0900_ave,($mv)_lst_1000_1500_ave,($mv)_lst_1600_2000_ave
+sp rm "($sdir)/($mv).daily.i($ix).j($jy).nc"
+
+define sym mv "mh2"
+use "($sdir)/($mv).daily.i($ix).j($jy).nc"
+save/file="($sdir)/wrf.daily.i($ix).j($jy).nc"/append ($mv)_daytime_ave,($mv)_nighttime_ave,($mv)_max,($mv)_min, ($mv)_lst_0500_0900_ave,($mv)_lst_1000_1500_ave,($mv)_lst_1600_2000_ave
+sp rm "($sdir)/($mv).daily.i($ix).j($jy).nc"
+
+define sym mv "tw"
+use "($sdir)/($mv).daily.i($ix).j($jy).nc"
+save/file="($sdir)/wrf.daily.i($ix).j($jy).nc"/append ($mv)_daytime_ave,($mv)_nighttime_ave,($mv)_max,($mv)_min, ($mv)_lst_0500_0900_ave,($mv)_lst_1000_1500_ave,($mv)_lst_1600_2000_ave
+sp rm "($sdir)/($mv).daily.i($ix).j($jy).nc"
+
+define sym mv "vi"
+use "($sdir)/($mv).daily.i($ix).j($jy).nc"
+save/file="($sdir)/wrf.daily.i($ix).j($jy).nc"/append ($mv)_daytime_ave,($mv)_nighttime_ave,($mv)_max,($mv)_min, ($mv)_lst_0500_0900_ave,($mv)_lst_1000_1500_ave,($mv)_lst_1600_2000_ave
+sp rm "($sdir)/($mv).daily.i($ix).j($jy).nc"
+
+define sym mv "temp2"
+use "($sdir)/($mv).daily.i($ix).j($jy).nc"
+save/file="($sdir)/wrf.daily.i($ix).j($jy).nc"/append ($mv)_daytime_ave,($mv)_nighttime_ave,($mv)_max,($mv)_min, ($mv)_lst_0500_0900_ave,($mv)_lst_1000_1500_ave,($mv)_lst_1600_2000_ave
+sp rm "($sdir)/($mv).daily.i($ix).j($jy).nc"
+
+define sym mv "rh2"
+use "($sdir)/($mv).daily.i($ix).j($jy).nc"
+save/file="($sdir)/wrf.daily.i($ix).j($jy).nc"/append ($mv)_daytime_ave,($mv)_nighttime_ave,($mv)_max,($mv)_min, ($mv)_lst_0500_0900_ave,($mv)_lst_1000_1500_ave,($mv)_lst_1600_2000_ave
+sp rm "($sdir)/($mv).daily.i($ix).j($jy).nc"
+
+define sym mv "pbl"
+use "($sdir)/($mv).daily.i($ix).j($jy).nc"
+save/file="($sdir)/wrf.daily.i($ix).j($jy).nc"/append ($mv)_daytime_ave,($mv)_nighttime_ave,($mv)_max,($mv)_min, ($mv)_lst_0500_0900_ave,($mv)_lst_1000_1500_ave,($mv)_lst_1600_2000_ave
+sp rm "($sdir)/($mv).daily.i($ix).j($jy).nc"
+
+define sym mv "w10"
+use "($sdir)/($mv).daily.i($ix).j($jy).nc"
+save/file="($sdir)/wrf.daily.i($ix).j($jy).nc"/append ($mv)_daytime_ave,($mv)_nighttime_ave,($mv)_max,($mv)_min, ($mv)_lst_0500_0900_ave,($mv)_lst_1000_1500_ave,($mv)_lst_1600_2000_ave
+sp rm "($sdir)/($mv).daily.i($ix).j($jy).nc"
+
+define sym mv "emc"
+use "($sdir)/($mv).daily.i($ix).j($jy).nc"
+save/file="($sdir)/wrf.daily.i($ix).j($jy).nc"/append ($mv)_daytime_ave,($mv)_nighttime_ave,($mv)_max,($mv)_min, ($mv)_lst_0500_0900_ave,($mv)_lst_1000_1500_ave,($mv)_lst_1600_2000_ave
+sp rm "($sdir)/($mv).daily.i($ix).j($jy).nc"
+
+define sym mv "wind"
+use "($sdir)/($mv).daily.i($ix).j($jy).nc"
+save/file="($sdir)/wrf.daily.i($ix).j($jy).nc"/append u_daytime_ave,u_nighttime_ave,v_daytime_ave,v_nighttime_ave,wdir_daytime_std,u_lst_0500_0900_ave,u_lst_1000_1500_ave,v_lst_0500_0900_ave,v_lst_1000_1500_ave,u_lst_1600_2000_ave,v_lst_1600_2000_ave
+sp rm "($sdir)/($mv).daily.i($ix).j($jy).nc"
+
+define sym mv "transport_wind"
+use "($sdir)/($mv).daily.i($ix).j($jy).nc"
+save/file="($sdir)/wrf.daily.i($ix).j($jy).nc"/append tu_daytime_ave,tu_nighttime_ave,tv_daytime_ave,tv_nighttime_ave,twdir_daytime_std,tu_lst_0500_0900_ave,tu_lst_1000_1500_ave,tv_lst_0500_0900_ave,tv_lst_1000_1500_ave,tu_lst_1600_2000_ave,tv_lst_1600_2000_ave
+sp rm "($sdir)/($mv).daily.i($ix).j($jy).nc"

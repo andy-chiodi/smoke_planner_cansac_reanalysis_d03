@@ -1,0 +1,66 @@
+ ! NOAA/PMEL TMAP
+ ! FERRET vvr.42 (optimized)
+ ! Linux 2.6.32-754.2.1.el6.x86_64 64-bit - 07/23/18
+ !  1-Feb-21 10:21     
+
+can va/all
+can da/all
+
+define sym ix "($1)"
+define sym jy "($2)"
+
+! dta, sdir and ddir defined in higher-level script
+
+define sym p10 "($ddir)/2010/pr.i($ix).j($jy).2010.nc"
+define sym p11 "($ddir)/2011/pr.i($ix).j($jy).2011.nc"
+define sym p12 "($ddir)/2012/pr.i($ix).j($jy).2012.nc"
+define sym p13 "($ddir)/2013/pr.i($ix).j($jy).2013.nc"
+define sym p14 "($ddir)/2014/pr.i($ix).j($jy).2014.nc"
+define sym p15 "($ddir)/2015/pr.i($ix).j($jy).2015.nc"
+define sym p16 "($ddir)/2016/pr.i($ix).j($jy).2016.nc"
+define sym p17 "($ddir)/2017/pr.i($ix).j($jy).2017.nc"
+define sym p18 "($ddir)/2018/pr.i($ix).j($jy).2018.nc"
+define sym p19 "($ddir)/2019/pr.i($ix).j($jy).2019.nc"
+define sym p20 "($ddir)/2020/pr.i($ix).j($jy).2020.nc"
+!let fl1 = SPAWN("ls -1 ($p10) ($p11) ($p12) ($p13) ($p14) ($p15) ($p16) ($p17) ($p18) ($p19) ($p20) ")
+
+let fl1 = SPAWN("ls -1 ($ddir)/????/pr.i($ix).j($jy).????.nc")
+TSERIES mv1 = fl1
+let/ti="24-hour accumulated precipitation"/units="mm" pr_gridmet = pr[gt=dta@asn]
+save/file="($sdir)/wrf.daily.i($ix).j($jy).nc"/append pr_gridmet 
+
+define sym h10 "($ddir)/2010/fm100.i($ix).j($jy).2010.nc"
+define sym h11 "($ddir)/2011/fm100.i($ix).j($jy).2011.nc"
+define sym h12 "($ddir)/2012/fm100.i($ix).j($jy).2012.nc"
+define sym h13 "($ddir)/2013/fm100.i($ix).j($jy).2013.nc"
+define sym h14 "($ddir)/2014/fm100.i($ix).j($jy).2014.nc"
+define sym h15 "($ddir)/2015/fm100.i($ix).j($jy).2015.nc"
+define sym h16 "($ddir)/2016/fm100.i($ix).j($jy).2016.nc"
+define sym h17 "($ddir)/2017/fm100.i($ix).j($jy).2017.nc"
+define sym h18 "($ddir)/2018/fm100.i($ix).j($jy).2018.nc"
+define sym h19 "($ddir)/2019/fm100.i($ix).j($jy).2019.nc"
+define sym h20 "($ddir)/2020/fm100.i($ix).j($jy).2020.nc"
+!let fl2 = SPAWN("ls -1 ($h10) ($h11) ($h12) ($h13) ($h14) ($h15) ($h16) ($h17) ($h18) ($h19) ($h20) ")
+let fl2 = SPAWN("ls -1 ($ddir)/????/fm100.i($ix).j($jy).????.nc")
+TSERIES mv2 = fl2
+let/ti="100-hr dead fuel moisture"/units="%" fm100_gridmet = fm100[gt=dta@asn]
+save/file="($sdir)/wrf.daily.i($ix).j($jy).nc"/append fm100_gridmet
+
+define sym t10 "($ddir)/2010/fm1000.i($ix).j($jy).2010.nc"
+define sym t11 "($ddir)/2011/fm1000.i($ix).j($jy).2011.nc"
+define sym t12 "($ddir)/2012/fm1000.i($ix).j($jy).2012.nc"
+define sym t13 "($ddir)/2013/fm1000.i($ix).j($jy).2013.nc"
+define sym t14 "($ddir)/2014/fm1000.i($ix).j($jy).2014.nc"
+define sym t15 "($ddir)/2015/fm1000.i($ix).j($jy).2015.nc"
+define sym t16 "($ddir)/2016/fm1000.i($ix).j($jy).2016.nc"
+define sym t17 "($ddir)/2017/fm1000.i($ix).j($jy).2017.nc"
+define sym t18 "($ddir)/2018/fm1000.i($ix).j($jy).2018.nc"
+define sym t19 "($ddir)/2019/fm1000.i($ix).j($jy).2019.nc"
+define sym t20 "($ddir)/2020/fm1000.i($ix).j($jy).2020.nc"
+!let fl3 = SPAWN("ls -1 ($t10) ($t11) ($t12) ($t13) ($t14) ($t15) ($t16) ($t17) ($t18) ($t19) ($t20) ")
+! probably faster to go back to previous line/way with directory excplicetly specified - 1980-2022
+let fl3 = SPAWN("ls -1 ($ddir)/????/fm1000.i($ix).j($jy).????.nc")
+TSERIES mv3 = fl3
+let/ti="1000-hr dead fuel moisture"/units="%" fm1000_gridmet = fm1000[gt=dta@asn]
+save/file="($sdir)/wrf.daily.i($ix).j($jy).nc"/append fm1000_gridmet
+

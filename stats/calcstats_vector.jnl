@@ -1,0 +1,79 @@
+can va/all
+can da/all
+
+! i,j, var_name, e.g. 220 36 w10_daytime_ave
+
+define sym i0 "($1)"
+define sym j0 "($2)"
+define sym vn0 "($3)"
+define sym source_dir "($4)"
+
+go make_windrose.jnl ($i0) ($j0) ($vn0) daytime
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) daytime 1
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) daytime 2
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) daytime 3
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) daytime 4
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) daytime 5
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) daytime 6
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) daytime 7
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) daytime 8
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) daytime 9
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) daytime 10
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) daytime 11
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) daytime 12
+
+go make_windrose.jnl ($i0) ($j0) ($vn0) nighttime
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) nighttime 1
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) nighttime 2
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) nighttime 3
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) nighttime 4
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) nighttime 5
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) nighttime 6
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) nighttime 7
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) nighttime 8
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) nighttime 9
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) nighttime 10
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) nighttime 11
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) nighttime 12
+
+go make_windrose.jnl ($i0) ($j0) ($vn0) lst_0500_0900
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_0500_0900 1
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_0500_0900 2
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_0500_0900 3
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_0500_0900 4
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_0500_0900 5
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_0500_0900 6
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_0500_0900 7
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_0500_0900 8
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_0500_0900 9
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_0500_0900 10
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_0500_0900 11
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_0500_0900 12
+
+go make_windrose.jnl ($i0) ($j0) ($vn0) lst_1000_1500
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1000_1500 1
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1000_1500 2
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1000_1500 3
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1000_1500 4
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1000_1500 5
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1000_1500 6
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1000_1500 7
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1000_1500 8
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1000_1500 9
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1000_1500 10
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1000_1500 11
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1000_1500 12
+
+go make_windrose.jnl ($i0) ($j0) ($vn0) lst_1600_2000
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1600_2000 1
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1600_2000 2
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1600_2000 3
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1600_2000 4
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1600_2000 5
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1600_2000 6
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1600_2000 7
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1600_2000 8
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1600_2000 9
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1600_2000 10
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1600_2000 11
+go make_windrose_month.jnl ($i0) ($j0) ($vn0) lst_1600_2000 12

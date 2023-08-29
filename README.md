@@ -160,14 +160,45 @@ and `yearlist` is the name of a file listing the years you would like to downloa
 
 Depends on PyFerret scripts getregridmet_fm1000.jnl  getregridmet_fm100.jnl  getregridmet_pr.jnl and a file with the latitudes and longitudes of the CANSAC d03 grid, namely, cansac.486lon.534lat.nc
 
-## Step 4. Reshape the WRF data into individual netcdf files with all times at a single lat-lon (X-Y) point.
+## Step 4. Reshape the data into netcdf files with all time steps at a single lat-lon (X-Y) point.
+
+Usage example (in ~./reshape directory):
+```
+python wrf_reshape.py 1980
+```
+
+In this case, the year to process is passed to wrf_reshape.py through sys.argv[1] 
+
+Depends on `reshape_gridmet_var_yr_ijrange_sub.jnl`,  `reshape_vars_yr_ijrange.jnl` and  `reshape_var_yr_ijrange_sub.jnl`
+Run this after the first three steps have been completed for the given year.  
 
 
+## Step 5. Calculate daily metrics that will be provided to the client and store them netcdf files
 
-## Step 5. Calculate daily statistics and store results in daily netcdf files
+Usage example (in ~./todaily):
+```
+python wrfdaily_tz.py
+```
 
-See files and README.nc in `todaily` directory
+Depends on Ferret scripts `gridmet_append_vars_ij.jnl`,  `merge.jnl`,  `todaily_transport_wind_tz.jnl`,  `todaily_tz.jnl`,  `todaily_wind_tz.jnl`,  `wrfdaily_tz.jnl` and netcdf file 'cansac.486lon.534lat.nc'.  What most likely can/should be edited is in the Python script `wrfdaily_tz.py` and includes the input and output directory paths, the start and end year of the entire archive that will be sent to the smoke planner (e.g. 1980 - 2022) and the I,J range that the script will iterate over.  The I,J range is hard-coded on lines 18 and 19 and set by default to cover the entire d03 domain (486 I points, 534 J points).  You can edit this range if a subset of the domain is desired for some reason. 
 
 ## Step 6. Create JSON files and upload them to aws bucket
 
-See files and README.nc in `json` directory
+Usage example (in ~./json):
+```
+python nc2json.py
+```
+
+Depends on file `var_list.txt`, modules in Python script `ij2latlon.py`, netcdf file `CANSAC_i486_j534_landmask.nc` and `nc2json.py`.  Note that around line 55 of `nc2json.py`  the start date of the JSON file is defined.  This must match the start date of the daily netcdf files (e.g. wrf.daily.i1.j1.nc, wrf.daily.i1.j2.nc ... wrf.daily.i486.j534.nc) in order for the smoke planner client to properly interpret dates.
+
+## Step 7.  Create JSON stastics files (percentile and wind rose information) and upload them the the aws bucket
+
+Usage example (in ~./stats):
+
+```
+python make_statsjson.py
+```
+
+This is one of the longer steps in terms of time needed to complete.  The wind rose data is particularly time consuming.
+Depends on `ij2latlon.py` from this directory, `CANSAC_i486_j534_landmask.nc` and `hgt.cansac.i486.j534.nc` (height of grid cell is saved in stats.json), Ferret scripts `calcstats.jnl`,  `calcstats_vector.jnl`,  `make_percentiles.jnl`,  `make_percentiles_month.jnl`,  `make_windrose.jnl`, and `make_windrose_month.jnl`, `var_list.dat` and  `wind_vector_list.dat` and make_statsjson.py.
+
