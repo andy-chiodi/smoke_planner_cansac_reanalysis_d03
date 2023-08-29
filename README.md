@@ -190,6 +190,7 @@ python nc2json.py
 ```
 
 Depends on file `var_list.txt`, modules in Python script `ij2latlon.py`, netcdf file `CANSAC_i486_j534_landmask.nc` and `nc2json.py`.  Note that around line 55 of `nc2json.py`  the start date of the JSON file is defined.  This must match the start date of the daily netcdf files (e.g. wrf.daily.i1.j1.nc, wrf.daily.i1.j2.nc ... wrf.daily.i486.j534.nc) in order for the smoke planner client to properly interpret dates.
+The aws client will also need to be installed locally to run this and the next step.
 
 ## Step 7.  Create JSON stastics files (percentile and wind rose information) and upload them the the aws bucket
 
