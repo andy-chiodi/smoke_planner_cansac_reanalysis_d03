@@ -3,6 +3,9 @@
  ! Linux 4.4.0-116-generic - 08/10/18
  ! 10-Dec-18 09:24     
 
+can da/all
+can va/all
+
 ! this script aggregates hourly netcdf files to monthly
 !set mem/size=4000
 define sym mv "($1)"
