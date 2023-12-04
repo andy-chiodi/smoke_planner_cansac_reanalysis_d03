@@ -13,9 +13,12 @@ define sym yr "($1)"
 define sym sd "($2)"
 sp date > runtime_($yr)_pr.txt
 
-use http://thredds.northwestknowledge.net:8080/thredds/dodsC/MET/($var)/($var)_($yr).nc
+!use http://thredds.northwestknowledge.net:8080/thredds/dodsC/MET/($var)/($var)_($yr).nc
+use ($var)_($yr).nc
 use cansac.486lon.534lat.nc
 
 let/ti="Precipitation Amount (gridMet)"/units="mm" ($var) = rect_to_curv(($inv)[d=1],lon[d=2],lat[d=2],0)
 save/file="($sd)/($var).($yr).nc"/clobber ($var)
 sp date >> runtime_($yr)_pr.txt
+sp rm ($var)_($yr).nc
+

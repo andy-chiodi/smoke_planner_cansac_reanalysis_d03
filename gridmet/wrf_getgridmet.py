@@ -54,7 +54,10 @@ if __name__ == '__main__':
         year  = x.strip()
         for y in variables:
             var = y.strip()            
-            pyferret.start(quiet=True,verify=False,journal=False,memsize=2000)
+            ncfn = var+'_'+year+'.nc' # name of gridmet netcdf file
+            oscmd = 'wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/'+ncfn
+            os.system(oscmd)
+            pyferret.start(quiet=True,verify=False,journal=False,memsize=2000)     
             fc = 'go '+ fsname + var + '.jnl  '+ year + '   '+ save_dir+str(year)
             print(fc)
             pyferret.run(fc)
