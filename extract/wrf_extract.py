@@ -16,11 +16,14 @@
 # wrf_zaxes.nc (created by define_axes.jnl)
 
 # [START_HERE] source WRF repository directory location info (possibly no write permission)
-source_dir  = '/storage/chiodi/CANSAC_reanalysis/d03/source_data/'
+###source_dir  = '/storage/chiodi/CANSAC_reanalysis/d03/source_data/'
+source_dir = '/fire5/cansac_reanalysis/1980/run3/'
 # working directory info (w/ write permission)
-working_dir = '/storage/chiodi/CANSAC_reanalysis/d03/extract/'
+###working_dir = '/storage/chiodi/CANSAC_reanalysis/d03/extract/'
+working_dir = '/fire8/jonc/Projects/smoke_planner_cansac_reanalysis_d03/extract/'
 # where the output netcdf files will be saved
-save_dir = '/storage/chiodi/CANSAC_reanalysis/d03/output_data/extract/'
+###save_dir = '/storage/chiodi/CANSAC_reanalysis/d03/output_data/extract/'
+save_dir = '/fire8/jonc/CANSAC_reanalysis/d03/output_data/extract/'
 # [end of directory changes]
 
 
