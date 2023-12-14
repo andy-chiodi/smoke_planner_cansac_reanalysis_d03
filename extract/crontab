@@ -1,0 +1,30 @@
+# Crontab for running wrf_extract.py
+
+00 00 14 12 * python wrf_extract.py daylist_1980_run1 hourlist run1 main_CANSAC.jnl &> output_run1.log
+00 03 14 12 * python wrf_extract.py daylist_1980_run2 hourlist run2 main_CANSAC.jnl &> output_run2.log
+00 06 14 12 * python wrf_extract.py daylist_1980_run3 hourlist run3 main_CANSAC.jnl &> output_run3.log
+00 09 14 12 * python wrf_extract.py daylist_1980_run4 hourlist run4 main_CANSAC.jnl &> output_run4.log
+00 12 14 12 * python wrf_extract.py daylist_1980_run5 hourlist run5 main_CANSAC.jnl &> output_run5.log
+00 15 14 12 * python wrf_extract.py daylist_1980_run6 hourlist run6 main_CANSAC.jnl &> output_run6.log
+00 18 14 12 * python wrf_extract.py daylist_1980_run7 hourlist run7 main_CANSAC.jnl &> output_run7.log
+00 21 14 12 * python wrf_extract.py daylist_1980_run8 hourlist run8 main_CANSAC.jnl &> output_run8.log
+00 00 15 12 * python wrf_extract.py daylist_1980_run9 hourlist run9 main_CANSAC.jnl &> output_run9.log
+00 03 15 12 * python wrf_extract.py daylist_1980_run10 hourlist run10 main_CANSAC.jnl &> output_run10.log
+00 06 15 12 * python wrf_extract.py daylist_1980_run11 hourlist run11 main_CANSAC.jnl &> output_run11.log
+00 09 15 12 * python wrf_extract.py daylist_1980_run12 hourlist run12 main_CANSAC.jnl &> output_run12.log
+00 12 15 12 * python wrf_extract.py daylist_1980_run13 hourlist run13 main_CANSAC.jnl &> output_run13.log
+00 15 15 12 * python wrf_extract.py daylist_1980_run14 hourlist run14 main_CANSAC.jnl &> output_run14.log
+00 18 15 12 * python wrf_extract.py daylist_1980_run15 hourlist run15 main_CANSAC.jnl &> output_run15.log
+00 21 15 12 * python wrf_extract.py daylist_1980_run16 hourlist run16 main_CANSAC.jnl &> output_run16.log
+00 00 16 12 * python wrf_extract.py daylist_1980_run17 hourlist run17 main_CANSAC.jnl &> output_run17.log
+00 03 16 12 * python wrf_extract.py daylist_1980_run18 hourlist run18 main_CANSAC.jnl &> output_run18.log
+00 06 16 12 * python wrf_extract.py daylist_1980_run19 hourlist run19 main_CANSAC.jnl &> output_run19.log
+00 09 16 12 * python wrf_extract.py daylist_1980_run20 hourlist run20 main_CANSAC.jnl &> output_run20.log
+00 12 16 12 * python wrf_extract.py daylist_1980_run21 hourlist run21 main_CANSAC.jnl &> output_run21.log
+00 15 16 12 * python wrf_extract.py daylist_1980_run22 hourlist run22 main_CANSAC.jnl &> output_run22.log
+00 18 16 12 * python wrf_extract.py daylist_1980_run23 hourlist run23 main_CANSAC.jnl &> output_run23.log
+00 21 16 12 * python wrf_extract.py daylist_1980_run24 hourlist run24 main_CANSAC.jnl &> output_run24.log
+00 00 17 12 * python wrf_extract.py daylist_1980_run25 hourlist run25 main_CANSAC.jnl &> output_run25.log
+00 03 17 12 * python wrf_extract.py daylist_1980_run26 hourlist run26 main_CANSAC.jnl &> output_run26.log
+
+
