@@ -1,5 +1,5 @@
 # file wrf_extract.py
-# command line usage:  python wrf_extract.py daylist hourlist main_CANSAC.jnl
+# command line usage:  python wrf_extract.py daylist hourlist run_dir main_CANSAC.jnl
 # where "daylist" and "hourlist" are file names of files containing lists of days/hours to repeat over
 # depends on ferret .jnl files: recipe_CANSAC.jnl and vi_CANSAC.jnl, as well as the variable-specific
 # ferret script that saves to netcdf, e.g. main_CANSAC.jnl (for mixing, trans. wind, vent. index and 10m wspd)
@@ -16,11 +16,14 @@
 # wrf_zaxes.nc (created by define_axes.jnl)
 
 # [START_HERE] source WRF repository directory location info (possibly no write permission)
-source_dir  = '/storage/chiodi/CANSAC_reanalysis/d03/source_data/'
+###source_dir  = '/storage/chiodi/CANSAC_reanalysis/d03/source_data/'
+source_dir_base = '/fire5/cansac_reanalysis/1980/'
 # working directory info (w/ write permission)
-working_dir = '/storage/chiodi/CANSAC_reanalysis/d03/extract/'
+###working_dir = '/storage/chiodi/CANSAC_reanalysis/d03/extract/'
+working_dir = '/fire8/jonc/Projects/smoke_planner_cansac_reanalysis_d03/extract/'
 # where the output netcdf files will be saved
-save_dir = '/storage/chiodi/CANSAC_reanalysis/d03/output_data/extract/'
+###save_dir = '/storage/chiodi/CANSAC_reanalysis/d03/output_data/extract/'
+save_dir = '/fire8/jonc/CANSAC_reanalysis/d03/output_data/extract/'
 # [end of directory changes]
 
 
@@ -50,8 +53,12 @@ if __name__ == '__main__':
     with open(hname) as f:
          hours = f.readlines()
 
+# read run subdirectory
+    run_dir = str(sys.argv[3])
+    source_dir = source_dir_base + "/" + run_dir + "/"
+
 # save str name of .jnl ferret script that this shell will run
-    fname = str(sys.argv[3])
+    fname = str(sys.argv[4])
 
     days  = [x.strip() for x in days]
     hours = [x.strip() for x in hours]

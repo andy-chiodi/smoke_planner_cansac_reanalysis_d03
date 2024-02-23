@@ -18,9 +18,11 @@ import datetime
 
 # [START_HERE] 
 # directory containing output of wrf_extract.py 
-source_dir  = '/storage/chiodi/CANSAC_reanalysis/d03/output_data/extract'   # note: no '/' at end because Ferret will not accept
+###source_dir  = '/storage/chiodi/CANSAC_reanalysis/d03/output_data/extract'   # note: no '/' at end because Ferret will not accept
+source_dir = '/fire8/jonc/CANSAC_reanalysis/d03/output_data/extract'
 # where the output aggregated netcdf files are saved, leaving off year, which will be added automatically below
-save_dir = '/storage/chiodi/CANSAC_reanalysis/d03/output_data/XYt'
+###save_dir = '/storage/chiodi/CANSAC_reanalysis/d03/output_data/XYt'
+save_dir = '/fire8/jonc/CANSAC_reanalysis/d03/output_data/XYt'
 # [end directory changes]
 
 

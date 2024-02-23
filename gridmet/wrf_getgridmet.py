@@ -14,8 +14,8 @@
 # [START_HERE] 
 # where the regridded, year-long, daily-ave, gridment netcdf files will be saved.  Note that the
 # a directory with the name of the given year (e.g. ~/2018) will be appended automatically to the following path
-save_dir = '/storage/chiodi/CANSAC_reanalysis/d03/output_data/XYt/'
-
+###save_dir = '/storage/chiodi/CANSAC_reanalysis/d03/output_data/XYt/'
+save_dir = '/fire8/jonc/CANSAC_reanalysis/d03/output_data/XYt/'
 #--------ferret script name
 fsname = 'getregridmet_'    #complete in loop for, e.g. >> go getregridment_fm100.jnl 2018 ($save_dir) 
 
@@ -55,7 +55,7 @@ if __name__ == '__main__':
         for y in variables:
             var = y.strip()            
             ncfn = var+'_'+year+'.nc' # name of gridmet netcdf file
-            oscmd = 'wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/'+ncfn
+            oscmd = 'wget -nc -c -nd -nv http://www.northwestknowledge.net/metdata/data/'+ncfn
             os.system(oscmd)
             pyferret.start(quiet=True,verify=False,journal=False,memsize=2000)     
             fc = 'go '+ fsname + var + '.jnl  '+ year + '   '+ save_dir+str(year)
