@@ -85,3 +85,4 @@ if __name__ == '__main__':
     lfid.close()
 
 # command line usage:  python wrf_aggregate.py varlist yearlist monthlist
+
