@@ -113,4 +113,4 @@ if __name__ == '__main__':
     lfid.write(str(et)+'\n')
     lfid.close()
 
-# command line usage:  python wrf_extract.py daylist hourlist main_CANSAC.jnl
+# command line usage:  python wrf_extract.py daylist hourlist run_dir main_CANSAC.jnl
