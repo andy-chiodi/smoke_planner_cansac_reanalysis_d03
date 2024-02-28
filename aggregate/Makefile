@@ -3,7 +3,7 @@
 activate:
 	conda activate FERRET
 
-aggregate: 
-	python wrf_aggregate.py varlist yearlist monthlist &> output_1980.log &
+aggregate_1981: 
+	python wrf_aggregate.py varlist yearlist monthlist &> output_1981.log &
 
 
