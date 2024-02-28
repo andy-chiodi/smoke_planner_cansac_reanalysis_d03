@@ -3,8 +3,10 @@
 activate:
 	conda activate FERRET
 
-extract_1981: 
-	/fire8/jonc/Projects/smoke_planner_cansac_reanalysis_d03/extract/create_daylist.sh 1981
-	python wrf_extract.py daylist_1981 main_CANSAC.jnl &> output_1981.log &
-
+clean:
+	- rm daylist_*_run*
+        
+extract_1982: clean
+	/fire8/jonc/Projects/smoke_planner_cansac_reanalysis_d03/extract/create_daylist.sh 1982
+	python wrf_extract.py 1982 main_CANSAC.jnl &> output_1982.log &
 
