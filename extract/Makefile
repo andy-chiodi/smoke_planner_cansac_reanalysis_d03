@@ -5,6 +5,7 @@ activate:
 
 clean:
 	- rm daylist_*_run*
+	- rm logfile.daylist*
         
 extract_1982: clean
 	/fire8/jonc/Projects/smoke_planner_cansac_reanalysis_d03/extract/create_daylist.sh 1982
